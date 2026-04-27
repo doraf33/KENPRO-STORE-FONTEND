@@ -1,6 +1,8 @@
 import { useState, useEffect, useContext, createContext, useRef, useCallback } from 'react';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { authAPI, productsAPI, clientsAPI, invoicesAPI, repairsAPI, suppliersAPI, creditsAPI, creditPaymentsAPI, dashboardAPI, modulesAPI, vendorAPI, adminReportsAPI, notificationsAPI } from './api';
+import { BarcodeScanner, BarcodeDisplay } from './BarcodeScanner';
+import LabelPrinter from './components/LabelPrinter';
 import './App.css';
 
 const fmt = (n) => Number(n || 0).toLocaleString('fr-FR') + ' FCFA';
@@ -557,12 +559,16 @@ function Dashboard() {
 // PRODUITS
 // ============================================================
 function Products() {
-  const [products, setProducts] = useState([]);
-  const [search, setSearch] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [form, setForm] = useState({ name: '', category: '', price: '', cost_price: '', quantity: '', min_stock: '5' });
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts]     = useState([]);
+  const [search, setSearch]         = useState('');
+  const [showForm, setShowForm]     = useState(false);
+  const [editId, setEditId]         = useState(null);
+  const [form, setForm]             = useState({ name: '', category: '', price: '', cost_price: '', quantity: '', min_stock: '5', barcode: '' });
+  const [loading, setLoading]       = useState(true);
+  const [showScanner, setShowScanner] = useState(false);
+  const [labelProduct, setLabelProduct] = useState(null);   // produit pour LabelPrinter
+  const [scanResult, setScanResult] = useState(null);        // résultat du scan (produit ou null)
+  const { show: showToast } = useToast();
 
   const load = async () => {
     try { const res = await productsAPI.getAll({ search }); setProducts(res.data.products); } catch (err) { console.error(err); }
@@ -570,7 +576,10 @@ function Products() {
   };
   useEffect(() => { load(); }, [search]);
 
-  const resetForm = () => { setForm({ name: '', category: '', price: '', cost_price: '', quantity: '', min_stock: '5' }); setEditId(null); setShowForm(false); };
+  const resetForm = () => {
+    setForm({ name: '', category: '', price: '', cost_price: '', quantity: '', min_stock: '5', barcode: '' });
+    setEditId(null); setShowForm(false);
+  };
 
   const handleSave = async () => {
     if (!form.name || !form.price) return;
@@ -579,46 +588,140 @@ function Products() {
       if (editId) { await productsAPI.update(editId, data); }
       else { await productsAPI.create(data); }
       resetForm(); load();
-    } catch (err) { alert(err.response?.data?.error || 'Erreur'); }
+    } catch (err) { alert(err.response?.data?.error || err.response?.data?.detail || 'Erreur'); }
   };
 
   const handleEdit = (p) => {
-    setForm({ name: p.name, category: p.category || '', price: String(p.price), cost_price: String(p.cost_price || ''), quantity: String(p.quantity), min_stock: String(p.min_stock || 5) });
-    setEditId(p.id);
-    setShowForm(true);
+    setForm({ name: p.name, category: p.category || '', price: String(p.price), cost_price: String(p.cost_price || ''), quantity: String(p.quantity), min_stock: String(p.min_stock || 5), barcode: p.barcode || '' });
+    setEditId(p.id); setShowForm(true);
   };
 
   const handleDelete = async (id) => {
     if (!confirm('Supprimer ?')) return;
-    try { await productsAPI.delete(id); load(); } catch (err) { alert(err.response?.data?.error || 'Erreur'); }
+    try { await productsAPI.delete(id); load(); } catch (err) { alert(err.response?.data?.detail || 'Erreur'); }
+  };
+
+  // Scan → recherche produit par code-barres
+  const handleBarcodeDetected = async (code) => {
+    setShowScanner(false);
+    try {
+      const res = await productsAPI.getByBarcode(code);
+      setScanResult({ found: true, product: res.data.product });
+      showToast({ type: 'success', title: 'Produit trouvé', message: res.data.product.name });
+    } catch {
+      setScanResult({ found: false, code });
+      showToast({ type: 'warning', title: 'Code-barres inconnu', message: code });
+    }
   };
 
   if (loading) return <div className="loading">Chargement...</div>;
 
   return (
     <div>
-      <div className="page-header"><h2>📦 Produits ({products.length})</h2><button className="btn-primary" onClick={() => { resetForm(); setShowForm(!showForm); }}>+ Produit</button></div>
-      <input type="text" placeholder="🔍 Rechercher..." value={search} onChange={e => setSearch(e.target.value)} className="search-input" />
-      {showForm && (
-        <div className="form-card"><h3>{editId ? 'Modifier le produit' : 'Nouveau produit'}</h3>
-          <div className="form-grid">
-            <input placeholder="Nom *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-            <input placeholder="Categorie" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} />
-            <input type="number" placeholder="Prix vente *" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
-            <input type="number" placeholder="Prix achat" value={form.cost_price} onChange={e => setForm({ ...form, cost_price: e.target.value })} />
-            <input type="number" placeholder="Quantite" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} />
-            <input type="number" placeholder="Stock min" value={form.min_stock} onChange={e => setForm({ ...form, min_stock: e.target.value })} />
-          </div>
-          <div className="form-actions"><button className="btn-primary" onClick={handleSave}>{editId ? 'Enregistrer' : 'Ajouter'}</button><button className="btn-secondary" onClick={resetForm}>Annuler</button></div>
+      {/* Modales */}
+      {showScanner && <BarcodeScanner onDetect={handleBarcodeDetected} onClose={() => setShowScanner(false)} title="Scanner un produit" />}
+      {labelProduct && <LabelPrinter product={labelProduct} onClose={() => { setLabelProduct(null); load(); }} />}
+
+      <div className="page-header">
+        <h2>📦 Produits ({products.length})</h2>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn-secondary" onClick={() => { setScanResult(null); setShowScanner(true); }}>📷 Scanner</button>
+          <button className="btn-primary" onClick={() => { resetForm(); setShowForm(!showForm); }}>+ Produit</button>
+        </div>
+      </div>
+
+      {/* Résultat scan */}
+      {scanResult && (
+        <div style={{ marginBottom: 16, padding: '14px 16px', borderRadius: 10,
+          background: scanResult.found ? 'rgba(45,212,160,.1)' : 'rgba(240,146,60,.1)',
+          border: `1px solid ${scanResult.found ? '#2dd4a0' : '#f0923c'}` }}>
+          {scanResult.found ? (
+            <div>
+              <div style={{ fontWeight: 700, color: '#2dd4a0', marginBottom: 8 }}>
+                ✅ Produit trouvé : {scanResult.product.name}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <BarcodeDisplay value={scanResult.product.barcode} height={45} />
+                <div style={{ flex: 1, marginLeft: 12 }}>
+                  <div style={{ color: '#d4a12e', fontWeight: 700 }}>{fmt(scanResult.product.price)}</div>
+                  <div style={{ color: '#7a8094', fontSize: 13 }}>Stock : {scanResult.product.quantity}</div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    <button className="btn-secondary" style={{ fontSize: 12, padding: '6px 12px' }}
+                      onClick={() => handleEdit(scanResult.product)}>✏️ Modifier</button>
+                    <button className="btn-secondary" style={{ fontSize: 12, padding: '6px 12px' }}
+                      onClick={() => setLabelProduct(scanResult.product)}>🏷️ Étiquette</button>
+                    <button onClick={() => setScanResult(null)} style={{ background: 'none', border: 'none', color: '#7a8094', cursor: 'pointer', fontSize: 18 }}>×</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontWeight: 700, color: '#f0923c', marginBottom: 8 }}>
+                ⚠️ Code inconnu : <code style={{ fontFamily: 'monospace' }}>{scanResult.code}</code>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn-primary" style={{ fontSize: 12 }}
+                  onClick={() => { setForm(f => ({ ...f, barcode: scanResult.code })); resetForm(); setForm(f => ({ ...f, barcode: scanResult.code })); setShowForm(true); setScanResult(null); }}>
+                  + Créer ce produit
+                </button>
+                <button onClick={() => setScanResult(null)} style={{ ...{background:'#252a3a',color:'#eaedf3',border:'none',borderRadius:8,padding:'6px 12px',cursor:'pointer',fontSize:12} }}>
+                  Ignorer
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
-      <div className="table-container"><table><thead><tr><th>Produit</th><th>Categorie</th><th>Prix</th><th>Stock</th><th>Valeur</th><th>Statut</th><th></th></tr></thead>
-        <tbody>{products.map(p => (
-          <tr key={p.id}><td className="bold">{p.name}</td><td className="muted">{p.category || '—'}</td><td className="gold bold">{fmt(p.price)}</td>
-            <td className={p.status === 'rupture' ? 'red bold' : p.status === 'bas' ? 'orange bold' : 'bold'}>{p.quantity}</td>
-            <td>{fmt(p.stock_value)}</td><td><span className={`badge badge-${p.status}`}>{p.status === 'rupture' ? 'Rupture' : p.status === 'bas' ? 'Bas' : 'OK'}</span></td>
-            <td><div style={{ display: 'flex', gap: 6 }}><button className="btn-icon" onClick={() => handleEdit(p)}>✏️</button><button className="btn-icon red" onClick={() => handleDelete(p.id)}>🗑️</button></div></td></tr>
-        ))}</tbody></table></div>
+
+      <input type="text" placeholder="🔍 Rechercher..." value={search} onChange={e => setSearch(e.target.value)} className="search-input" />
+
+      {showForm && (
+        <div className="form-card">
+          <h3>{editId ? 'Modifier le produit' : 'Nouveau produit'}</h3>
+          <div className="form-grid">
+            <input placeholder="Nom *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+            <input placeholder="Catégorie" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} />
+            <input type="number" placeholder="Prix vente *" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
+            <input type="number" placeholder="Prix achat" value={form.cost_price} onChange={e => setForm({ ...form, cost_price: e.target.value })} />
+            <input type="number" placeholder="Quantité" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} />
+            <input type="number" placeholder="Stock min" value={form.min_stock} onChange={e => setForm({ ...form, min_stock: e.target.value })} />
+            <input placeholder="Code-barres (optionnel)" value={form.barcode} onChange={e => setForm({ ...form, barcode: e.target.value })}
+              style={{ gridColumn: 'span 2' }} />
+          </div>
+          <div className="form-actions">
+            <button className="btn-primary" onClick={handleSave}>{editId ? 'Enregistrer' : 'Ajouter'}</button>
+            <button className="btn-secondary" onClick={resetForm}>Annuler</button>
+          </div>
+        </div>
+      )}
+
+      <div className="table-container">
+        <table>
+          <thead><tr><th>Produit</th><th>Catégorie</th><th>Code-barres</th><th>Prix</th><th>Stock</th><th>Statut</th><th></th></tr></thead>
+          <tbody>{products.map(p => (
+            <tr key={p.id}>
+              <td className="bold">{p.name}</td>
+              <td className="muted">{p.category || '—'}</td>
+              <td>
+                {p.barcode
+                  ? <code style={{ fontSize: 11, color: '#7a8094', fontFamily: 'monospace' }}>{p.barcode}</code>
+                  : <span style={{ color: '#3a3f52', fontSize: 11 }}>—</span>}
+              </td>
+              <td className="gold bold">{fmt(p.price)}</td>
+              <td className={p.status === 'rupture' ? 'red bold' : p.status === 'bas' ? 'orange bold' : 'bold'}>{p.quantity}</td>
+              <td><span className={`badge badge-${p.status}`}>{p.status === 'rupture' ? 'Rupture' : p.status === 'bas' ? 'Bas' : 'OK'}</span></td>
+              <td>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button className="btn-icon" onClick={() => handleEdit(p)}>✏️</button>
+                  <button className="btn-icon" onClick={() => setLabelProduct(p)} title="Imprimer étiquette">🏷️</button>
+                  <button className="btn-icon red" onClick={() => handleDelete(p.id)}>🗑️</button>
+                </div>
+              </td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -698,14 +801,18 @@ function Clients() {
 // FACTURES / DEVIS
 // ============================================================
 function Invoices() {
-  const [invoices, setInvoices] = useState([]);
-  const [stats, setStats] = useState({});
-  const [filter, setFilter] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [clients, setClients] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [form, setForm] = useState({ client_id: '', invoice_type: 'facture', status: 'en_attente', items: [{ product_id: '', quantity: 1, price: '' }], notes: '' });
-  const [loading, setLoading] = useState(true);
+  const [invoices, setInvoices]     = useState([]);
+  const [stats, setStats]           = useState({});
+  const [filter, setFilter]         = useState('');
+  const [showForm, setShowForm]     = useState(false);
+  const [clients, setClients]       = useState([]);
+  const [products, setProducts]     = useState([]);
+  const [form, setForm]             = useState({ client_id: '', invoice_type: 'facture', status: 'en_attente', items: [{ product_id: '', quantity: 1, price: '' }], notes: '' });
+  const [loading, setLoading]       = useState(true);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanningItemIdx, setScanningItemIdx] = useState(null);  // index ligne en cours de scan
+  const quantityRefs = useRef({});
+  const { show: showToast } = useToast();
 
   const load = async () => {
     try {
@@ -737,6 +844,41 @@ function Invoices() {
       items[i] = { ...items[i], [field]: val };
     }
     setForm({ ...form, items });
+  };
+
+  // Scanner → ajouter/compléter une ligne de facture
+  const handleInvoiceScan = async (code) => {
+    setShowScanner(false);
+    try {
+      const res = await productsAPI.getByBarcode(code);
+      const prod = res.data.product;
+      const targetIdx = scanningItemIdx;
+      setScanningItemIdx(null);
+      setForm(prev => {
+        const items = [...prev.items];
+        if (targetIdx !== null && !items[targetIdx].product_id) {
+          // Remplir la ligne vide ciblée
+          items[targetIdx] = { product_id: String(prod.id), quantity: 1, price: String(prod.price) };
+        } else {
+          // Chercher si le produit est déjà dans la liste
+          const existingIdx = items.findIndex(it => Number(it.product_id) === prod.id);
+          if (existingIdx >= 0) {
+            items[existingIdx] = { ...items[existingIdx], quantity: Number(items[existingIdx].quantity) + 1 };
+          } else {
+            items.push({ product_id: String(prod.id), quantity: 1, price: String(prod.price) });
+          }
+        }
+        return { ...prev, items };
+      });
+      showToast({ type: 'success', title: 'Produit ajouté', message: prod.name });
+      // Focus quantité après ajout
+      setTimeout(() => {
+        const idx = scanningItemIdx !== null ? scanningItemIdx : form.items.length;
+        quantityRefs.current[idx]?.focus();
+      }, 100);
+    } catch {
+      showToast({ type: 'error', title: 'Code-barres inconnu', message: code });
+    }
   };
 
   const getTotal = () => form.items.reduce((s, it) => {
@@ -808,12 +950,21 @@ function Invoices() {
 
   return (
     <div>
+      {/* Scanner modal */}
+      {showScanner && (
+        <BarcodeScanner
+          onDetect={handleInvoiceScan}
+          onClose={() => { setShowScanner(false); setScanningItemIdx(null); }}
+          title="Scanner un produit"
+        />
+      )}
+
       <div className="page-header"><h2>🧾 Factures / Devis ({invoices.length})</h2><button className="btn-primary" onClick={openForm}>+ Facture</button></div>
 
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <div className="stat-card"><span className="stat-icon">🧾</span><span className="stat-label">Factures</span><span className="stat-value blue">{stats.nb_factures || 0}</span></div>
         <div className="stat-card"><span className="stat-icon">📋</span><span className="stat-label">Devis</span><span className="stat-value purple">{stats.nb_devis || 0}</span></div>
-        <div className="stat-card"><span className="stat-icon">💰</span><span className="stat-label">Factures payees</span><span className="stat-value green">{fmt(stats.total_factures_payees)}</span></div>
+        <div className="stat-card"><span className="stat-icon">💰</span><span className="stat-label">Factures payées</span><span className="stat-value green">{fmt(stats.total_factures_payees)}</span></div>
       </div>
 
       <div className="filter-bar">
@@ -823,7 +974,17 @@ function Invoices() {
       </div>
 
       {showForm && (
-        <div className="form-card"><h3>Nouvelle facture / devis</h3>
+        <div className="form-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ margin: 0 }}>Nouvelle facture / devis</h3>
+            <button
+              className="btn-secondary"
+              style={{ fontSize: 13, padding: '7px 14px' }}
+              onClick={() => { setScanningItemIdx(null); setShowScanner(true); }}
+            >
+              📷 Scanner produit
+            </button>
+          </div>
           <div className="form-grid">
             <select value={form.invoice_type} onChange={e => setForm({ ...form, invoice_type: e.target.value })}>
               <option value="facture">Facture</option><option value="devis">Devis</option>
@@ -834,7 +995,7 @@ function Invoices() {
             </select>
             {form.invoice_type === 'facture' && (
               <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
-                <option value="en_attente">En attente</option><option value="payee">Payee</option>
+                <option value="en_attente">En attente</option><option value="payee">Payée</option>
               </select>
             )}
           </div>
@@ -842,8 +1003,8 @@ function Invoices() {
           <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
             <span style={{ flex: 2, fontSize: 11, color: '#7a8094' }}>Produit</span>
             <span style={{ flex: 0.7, fontSize: 11, color: '#7a8094', textAlign: 'center' }}>Prix</span>
-            <span style={{ flex: 0.5, fontSize: 11, color: '#7a8094', textAlign: 'center' }}>Qte</span>
-            <span style={{ width: 24 }}></span>
+            <span style={{ flex: 0.5, fontSize: 11, color: '#7a8094', textAlign: 'center' }}>Qté</span>
+            <span style={{ width: 60 }}></span>
           </div>
           {form.items.map((it, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
@@ -852,7 +1013,17 @@ function Invoices() {
                 {products.map(p => <option key={p.id} value={p.id}>{p.name} ({fmt(p.price)})</option>)}
               </select>
               <input type="number" value={it.price} placeholder="Prix" onChange={e => updateItem(i, 'price', e.target.value)} style={{ flex: 0.7, textAlign: 'center' }} />
-              <input type="number" value={it.quantity} min={1} onChange={e => updateItem(i, 'quantity', e.target.value)} style={{ flex: 0.5, textAlign: 'center' }} />
+              <input
+                type="number" value={it.quantity} min={1}
+                ref={el => quantityRefs.current[i] = el}
+                onChange={e => updateItem(i, 'quantity', e.target.value)}
+                style={{ flex: 0.5, textAlign: 'center' }}
+              />
+              <button
+                onClick={() => { setScanningItemIdx(i); setShowScanner(true); }}
+                title="Scanner un produit pour cette ligne"
+                style={{ background: 'none', border: '1px solid #252a3a', borderRadius: 6, color: '#d4a12e', cursor: 'pointer', fontSize: 16, padding: '4px 8px' }}
+              >📷</button>
               {form.items.length > 1 && <button onClick={() => removeItem(i)} style={{ background: 'none', border: 'none', color: '#ef6461', cursor: 'pointer', fontSize: 16 }}>✕</button>}
             </div>
           ))}
@@ -860,7 +1031,10 @@ function Invoices() {
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0', borderTop: '1px solid #252a3a' }}>
             <span className="muted bold">Total</span><span className="gold bold" style={{ fontSize: 18 }}>{fmt(getTotal())}</span>
           </div>
-          <div className="form-actions"><button className="btn-primary" onClick={handleCreate}>Creer</button><button className="btn-secondary" onClick={() => setShowForm(false)}>Annuler</button></div>
+          <div className="form-actions">
+            <button className="btn-primary" onClick={handleCreate}>Créer</button>
+            <button className="btn-secondary" onClick={() => setShowForm(false)}>Annuler</button>
+          </div>
         </div>
       )}
 

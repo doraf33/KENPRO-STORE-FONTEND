@@ -1,13 +1,13 @@
 // ============================================================
 // KENPRO STORE — Configuration API
 // Fichier : src/api.js
-// Ce fichier gère toute la communication avec le back-end Flask
+// Communication avec le back-end FastAPI (port 8000)
 // ============================================================
 
 import axios from 'axios';
 
-// Adresse du serveur Flask
-const API_URL = 'http://localhost:5000/api';
+// Adresse du serveur FastAPI — défini dans .env (VITE_API_URL)
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 // Créer une instance axios configurée (no-cache)
 const api = axios.create({
@@ -59,6 +59,8 @@ export const productsAPI = {
   adjustStock: (id, adjustment, reason) => api.post(`/products/${id}/stock`, { adjustment, reason }),
   getAlerts: () => api.get('/products/alerts'),
   getCategories: () => api.get('/products/categories'),
+  getByBarcode: (code) => api.get(`/products/barcode/${encodeURIComponent(code)}`),
+  generateBarcode: (id) => api.post(`/products/${id}/barcode`),
 };
 
 // ── CLIENTS ──
