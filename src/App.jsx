@@ -607,10 +607,10 @@ function Products() {
     try {
       const res = await productsAPI.getByBarcode(code);
       setScanResult({ found: true, product: res.data.product });
-      showToast({ type: 'success', title: 'Produit trouvé', message: res.data.product.name });
+      showToast('Produit trouvé', res.data.product.name, 'success');
     } catch {
       setScanResult({ found: false, code });
-      showToast({ type: 'warning', title: 'Code-barres inconnu', message: code });
+      showToast('Code-barres inconnu', code, 'warning');
     }
   };
 
@@ -662,7 +662,13 @@ function Products() {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn-primary" style={{ fontSize: 12 }}
-                  onClick={() => { setForm(f => ({ ...f, barcode: scanResult.code })); resetForm(); setForm(f => ({ ...f, barcode: scanResult.code })); setShowForm(true); setScanResult(null); }}>
+                  onClick={() => {
+                    const code = scanResult.code;
+                    setScanResult(null);
+                    setEditId(null);
+                    setForm({ name: '', category: '', price: '', cost_price: '', quantity: '', min_stock: '5', barcode: code });
+                    setShowForm(true);
+                  }}>
                   + Créer ce produit
                 </button>
                 <button onClick={() => setScanResult(null)} style={{ ...{background:'#252a3a',color:'#eaedf3',border:'none',borderRadius:8,padding:'6px 12px',cursor:'pointer',fontSize:12} }}>
@@ -870,14 +876,14 @@ function Invoices() {
         }
         return { ...prev, items };
       });
-      showToast({ type: 'success', title: 'Produit ajouté', message: prod.name });
+      showToast('Produit ajouté', prod.name, 'success');
       // Focus quantité après ajout
       setTimeout(() => {
         const idx = scanningItemIdx !== null ? scanningItemIdx : form.items.length;
         quantityRefs.current[idx]?.focus();
       }, 100);
     } catch {
-      showToast({ type: 'error', title: 'Code-barres inconnu', message: code });
+      showToast('Code-barres inconnu', code, 'error');
     }
   };
 
