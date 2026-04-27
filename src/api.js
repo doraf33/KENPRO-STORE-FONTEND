@@ -176,4 +176,22 @@ export const notificationsAPI = {
   delete:     (id)     => api.delete(`/notifications/${id}`),
 };
 
+// ── PARAMÈTRES BOUTIQUE ──
+export const settingsAPI = {
+  getShop:    ()       => api.get('/settings/shop'),
+  updateShop: (data)   => api.put('/settings/shop', data),
+  uploadLogo: (file)   => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api.post('/settings/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+};
+
+// ── TICKETS & ÉTIQUETTES ──
+// Ces endpoints retournent du HTML → on les ouvre dans une popup
+export const ticketsAPI = {
+  invoiceUrl: (id)               => `${API_URL}/tickets/invoice/${id}`,
+  labelUrl:   (pid, qty, format) => `${API_URL}/tickets/label/${pid}?qty=${qty}&format=${format || '58mm'}`,
+};
+
 export default api;

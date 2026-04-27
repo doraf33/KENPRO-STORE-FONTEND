@@ -1,8 +1,10 @@
 import { useState, useEffect, useContext, createContext, useRef, useCallback } from 'react';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { authAPI, productsAPI, clientsAPI, invoicesAPI, repairsAPI, suppliersAPI, creditsAPI, creditPaymentsAPI, dashboardAPI, modulesAPI, vendorAPI, adminReportsAPI, notificationsAPI } from './api';
+import { authAPI, productsAPI, clientsAPI, invoicesAPI, repairsAPI, suppliersAPI, creditsAPI, creditPaymentsAPI, dashboardAPI, modulesAPI, vendorAPI, adminReportsAPI, notificationsAPI, settingsAPI, ticketsAPI } from './api';
 import { BarcodeScanner, BarcodeDisplay } from './BarcodeScanner';
-import LabelPrinter from './components/LabelPrinter';
+import LabelPrinter   from './components/LabelPrinter';
+import TicketPrinter  from './components/TicketPrinter';
+import ShopSettings   from './components/ShopSettings';
 import './App.css';
 
 const fmt = (n) => Number(n || 0).toLocaleString('fr-FR') + ' FCFA';
@@ -815,8 +817,9 @@ function Invoices() {
   const [products, setProducts]     = useState([]);
   const [form, setForm]             = useState({ client_id: '', invoice_type: 'facture', status: 'en_attente', items: [{ product_id: '', quantity: 1, price: '' }], notes: '' });
   const [loading, setLoading]       = useState(true);
-  const [showScanner, setShowScanner] = useState(false);
-  const [scanningItemIdx, setScanningItemIdx] = useState(null);  // index ligne en cours de scan
+  const [showScanner, setShowScanner]         = useState(false);
+  const [scanningItemIdx, setScanningItemIdx] = useState(null);
+  const [ticketInvoice, setTicketInvoice]     = useState(null);  // facture pour TicketPrinter
   const quantityRefs = useRef({});
   const { show: showToast } = useToast();
 
@@ -905,7 +908,13 @@ function Invoices() {
   };
 
   const handlePay = async (id) => {
-    try { await invoicesAPI.pay(id); load(); } catch (err) { alert(err.response?.data?.error || 'Erreur'); }
+    try {
+      await invoicesAPI.pay(id);
+      await load();
+      // Impression automatique du ticket après paiement
+      const paid = (await invoicesAPI.getAll()).data.invoices.find(i => i.id === id);
+      if (paid) setTicketInvoice(paid);
+    } catch (err) { alert(err.response?.data?.error || err.response?.data?.detail || 'Erreur'); }
   };
 
   const handleConvert = async (id) => {
@@ -956,13 +965,16 @@ function Invoices() {
 
   return (
     <div>
-      {/* Scanner modal */}
+      {/* Modales */}
       {showScanner && (
         <BarcodeScanner
           onDetect={handleInvoiceScan}
           onClose={() => { setShowScanner(false); setScanningItemIdx(null); }}
           title="Scanner un produit"
         />
+      )}
+      {ticketInvoice && (
+        <TicketPrinter invoice={ticketInvoice} onClose={() => setTicketInvoice(null)} />
       )}
 
       <div className="page-header"><h2>🧾 Factures / Devis ({invoices.length})</h2><button className="btn-primary" onClick={openForm}>+ Facture</button></div>
@@ -1060,9 +1072,10 @@ function Invoices() {
             <span className="gold bold" style={{ fontSize: 18 }}>{fmt(inv.total)}</span>
           </div>
           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-            <button className="btn-small btn-secondary" onClick={() => printInvoice(inv)}>🖨️ Imprimer</button>
+            <button className="btn-small btn-secondary" onClick={() => setTicketInvoice(inv)} title="Ticket caisse">🧾 Ticket</button>
+            <button className="btn-small btn-secondary" onClick={() => printInvoice(inv)} title="Facture complète">🖨️ Facture</button>
             <button className="btn-small btn-secondary" style={{ background: '#1c3b2a', color: '#2dd4a0', border: '1px solid #2dd4a0' }} onClick={() => sendWhatsApp(inv)}>📱 WhatsApp</button>
-            {inv.status === 'en_attente' && inv.invoice_type === 'facture' && <button className="btn-small btn-primary" onClick={() => handlePay(inv.id)}>✅ Payee</button>}
+            {inv.status === 'en_attente' && inv.invoice_type === 'facture' && <button className="btn-small btn-primary" onClick={() => handlePay(inv.id)}>✅ Payer</button>}
             {inv.invoice_type === 'devis' && inv.status !== 'converti' && <button className="btn-small btn-primary" onClick={() => handleConvert(inv.id)}>→ Convertir en facture</button>}
             {inv.status !== 'payee' && <button className="btn-icon red" onClick={() => handleDelete(inv.id)}>🗑️</button>}
           </div>
@@ -2261,15 +2274,16 @@ function AdminReports() {
 // APP PRINCIPAL
 // ============================================================
 const ADMIN_TABS = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: '📊' },
-  { id: 'products', label: 'Produits', icon: '📦' },
-  { id: 'clients', label: 'Clients', icon: '👥' },
-  { id: 'invoices', label: 'Factures / Devis', icon: '🧾' },
-  { id: 'repairs', label: 'Reparations', icon: '🔧' },
-  { id: 'suppliers', label: 'Fournisseurs', icon: '🚚' },
-  { id: 'journals', label: 'Journaux', icon: '📒' },
-  { id: 'modules', label: 'Modules', icon: '⚙️' },
-  { id: 'admin_reports', label: 'Rapports vendeurs', icon: '📋' },
+  { id: 'dashboard',    label: 'Tableau de bord',   icon: '📊' },
+  { id: 'products',     label: 'Produits',           icon: '📦' },
+  { id: 'clients',      label: 'Clients',            icon: '👥' },
+  { id: 'invoices',     label: 'Factures / Devis',   icon: '🧾' },
+  { id: 'repairs',      label: 'Réparations',        icon: '🔧' },
+  { id: 'suppliers',    label: 'Fournisseurs',       icon: '🚚' },
+  { id: 'journals',     label: 'Journaux',           icon: '📒' },
+  { id: 'modules',      label: 'Modules',            icon: '🔩' },
+  { id: 'admin_reports',label: 'Rapports vendeurs',  icon: '📋' },
+  { id: 'shop_settings',label: 'Paramètres boutique',icon: '⚙️' },
 ];
 const VENDOR_TABS = [
   { id: 'vendor_dashboard', label: 'Mon tableau de bord', icon: '🏠' },
@@ -2366,6 +2380,7 @@ function AppShell() {
       case 'journals':         return <Journals />;
       case 'modules':          return <ModuleManager />;
       case 'admin_reports':    return <AdminReports />;
+      case 'shop_settings':    return <ShopSettings />;
       case 'vendor_dashboard': return <VendorDashboard />;
       case 'my_report':        return <VendorReportForm onSubmitted={() => { setTab('my_reports'); showToast('Rapport soumis !', 'Votre rapport journalier a été envoyé.', 'success'); }} />;
       case 'my_reports':       return <MyReports />;
