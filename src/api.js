@@ -196,4 +196,13 @@ export const ticketsAPI = {
   repairExitUrl:  (id)               => `${API_URL}/tickets/repair/${id}/exit`,
 };
 
+// ── STORE PUBLIC (admin) ──
+export const publicStoreAPI = {
+  getAdminProducts: ()            => api.get('/store/admin/products'),
+  updateProduct:    (id, data)    => api.put(`/store/admin/products/${id}`, data),
+  getOrders:        (params)      => api.get('/store/admin/orders', { params }),
+  getOrder:         (id)          => api.get(`/store/admin/orders/${id}`),
+  updateOrderStatus:(id, data)    => api.put(`/store/admin/orders/${id}/status`, data),
+};
+
 export default api;

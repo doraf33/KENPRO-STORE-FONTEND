@@ -1,11 +1,12 @@
 import { useState, useEffect, useContext, createContext, useRef, useCallback } from 'react';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { authAPI, productsAPI, clientsAPI, invoicesAPI, repairsAPI, suppliersAPI, creditsAPI, creditPaymentsAPI, dashboardAPI, modulesAPI, vendorAPI, adminReportsAPI, notificationsAPI, settingsAPI, ticketsAPI } from './api';
+import { authAPI, productsAPI, clientsAPI, invoicesAPI, repairsAPI, suppliersAPI, creditsAPI, creditPaymentsAPI, dashboardAPI, modulesAPI, vendorAPI, adminReportsAPI, notificationsAPI, settingsAPI, ticketsAPI, publicStoreAPI } from './api';
 import { BarcodeScanner, BarcodeDisplay } from './BarcodeScanner';
 import LabelPrinter        from './components/LabelPrinter';
 import TicketPrinter       from './components/TicketPrinter';
 import ShopSettings        from './components/ShopSettings';
 import RepairTicketPrinter from './components/RepairTicketPrinter';
+import OnlineStore         from './components/OnlineStore';
 import './App.css';
 
 const fmt = (n) => Number(n || 0).toLocaleString('fr-FR') + ' FCFA';
@@ -2279,7 +2280,8 @@ const ADMIN_TABS = [
   { id: 'journals',     label: 'Journaux',           icon: '📒' },
   { id: 'modules',      label: 'Modules',            icon: '🔩' },
   { id: 'admin_reports',label: 'Rapports vendeurs',  icon: '📋' },
-  { id: 'shop_settings',label: 'Paramètres boutique',icon: '⚙️' },
+  { id: 'shop_settings', label: 'Paramètres boutique', icon: '⚙️' },
+  { id: 'online_store',  label: 'Boutique en ligne',   icon: '🛒' },
 ];
 const VENDOR_TABS = [
   { id: 'vendor_dashboard', label: 'Mon tableau de bord', icon: '🏠' },
@@ -2377,6 +2379,7 @@ function AppShell() {
       case 'modules':          return <ModuleManager />;
       case 'admin_reports':    return <AdminReports />;
       case 'shop_settings':    return <ShopSettings />;
+      case 'online_store':     return <OnlineStore />;
       case 'vendor_dashboard': return <VendorDashboard />;
       case 'my_report':        return <VendorReportForm onSubmitted={() => { setTab('my_reports'); showToast('Rapport soumis !', 'Votre rapport journalier a été envoyé.', 'success'); }} />;
       case 'my_reports':       return <MyReports />;
