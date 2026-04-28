@@ -190,8 +190,10 @@ export const settingsAPI = {
 // ── TICKETS & ÉTIQUETTES ──
 // Ces endpoints retournent du HTML → on les ouvre dans une popup
 export const ticketsAPI = {
-  invoiceUrl: (id)               => `${API_URL}/tickets/invoice/${id}`,
-  labelUrl:   (pid, qty, format) => `${API_URL}/tickets/label/${pid}?qty=${qty}&format=${format || '58mm'}`,
+  invoiceUrl:     (id)               => `${API_URL}/tickets/invoice/${id}`,
+  labelUrl:       (pid, qty, format) => `${API_URL}/tickets/label/${pid}?qty=${qty}&format=${format || '58mm'}`,
+  repairUrl:      (id)               => `${API_URL}/tickets/repair/${id}`,
+  repairExitUrl:  (id)               => `${API_URL}/tickets/repair/${id}/exit`,
 };
 
 export default api;

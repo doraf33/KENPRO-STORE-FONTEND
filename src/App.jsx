@@ -2,9 +2,10 @@ import { useState, useEffect, useContext, createContext, useRef, useCallback } f
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { authAPI, productsAPI, clientsAPI, invoicesAPI, repairsAPI, suppliersAPI, creditsAPI, creditPaymentsAPI, dashboardAPI, modulesAPI, vendorAPI, adminReportsAPI, notificationsAPI, settingsAPI, ticketsAPI } from './api';
 import { BarcodeScanner, BarcodeDisplay } from './BarcodeScanner';
-import LabelPrinter   from './components/LabelPrinter';
-import TicketPrinter  from './components/TicketPrinter';
-import ShopSettings   from './components/ShopSettings';
+import LabelPrinter        from './components/LabelPrinter';
+import TicketPrinter       from './components/TicketPrinter';
+import ShopSettings        from './components/ShopSettings';
+import RepairTicketPrinter from './components/RepairTicketPrinter';
 import './App.css';
 
 const fmt = (n) => Number(n || 0).toLocaleString('fr-FR') + ' FCFA';
@@ -1092,15 +1093,26 @@ function Invoices() {
 // REPARATIONS
 // ============================================================
 function Repairs() {
-  const [repairs, setRepairs] = useState([]);
-  const [filter, setFilter] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [clients, setClients] = useState([]);
-  const [form, setForm] = useState({ client_id: '', device_type: 'laptop', brand: '', model: '', serial_number: '', problem: '', estimated_cost: '', priority: 'normal' });
-  const [loading, setLoading] = useState(true);
+  const [repairs,       setRepairs]       = useState([]);
+  const [filter,        setFilter]        = useState('');
+  const [showForm,      setShowForm]      = useState(false);
+  const [clients,       setClients]       = useState([]);
+  const [form,          setForm]          = useState({ client_id: '', device_type: 'laptop', brand: '', model: '', serial_number: '', problem: '', estimated_cost: '', priority: 'normal' });
+  const [loading,       setLoading]       = useState(true);
+  const [ticketRepair,  setTicketRepair]  = useState(null);  // pour RepairTicketPrinter
+  const { show: showToast } = useToast();
 
   const STATUSES = ['recu', 'diagnostic', 'attente_piece', 'en_reparation', 'termine', 'livre'];
   const STATUS_LABELS = { recu: 'Recu', diagnostic: 'Diagnostic', attente_piece: 'Att. piece', en_reparation: 'En repar.', termine: 'Termine', livre: 'Livre' };
+
+  // Messages WhatsApp automatiques selon le statut
+  const WA_MESSAGES = {
+    diagnostic:    (r) => `Bonjour ${r.client_name},\n📋 Votre ${r.device_type} (Ticket: *${r.ticket}*) est en cours de diagnostic.\nNous vous tiendrons informé.`,
+    attente_piece: (r) => `Bonjour ${r.client_name},\n⏳ Votre ${r.device_type} (Ticket: *${r.ticket}*) est en attente d'une pièce.\nNous vous contacterons dès la réception.`,
+    en_reparation: (r) => `Bonjour ${r.client_name},\n🔧 La réparation de votre ${r.device_type} (Ticket: *${r.ticket}*) est en cours.\nNous vous contacterons à la fin.`,
+    termine:       (r) => `Bonjour ${r.client_name},\n✅ Votre ${r.device_type} (Ticket: *${r.ticket}*) est *PRÊT* !\nVenez le récupérer muni de votre ticket.\nMerci — KENPRO STORE`,
+    livre:         (r) => `Bonjour ${r.client_name},\n📦 Votre ${r.device_type} (Ticket: *${r.ticket}*) vous a été remis.\nMerci pour votre confiance — KENPRO STORE`,
+  };
 
   const load = async () => {
     try { const res = await repairsAPI.getAll(filter ? { status: filter } : {}); setRepairs(res.data.repairs); } catch (err) { console.error(err); }
@@ -1114,72 +1126,51 @@ function Repairs() {
   };
 
   const handleCreate = async () => {
-    if (!form.client_id || !form.problem) { alert('Client et probleme obligatoires'); return; }
+    if (!form.client_id || !form.problem) { alert('Client et problème obligatoires'); return; }
     try {
-      await repairsAPI.create({ ...form, client_id: Number(form.client_id), estimated_cost: Number(form.estimated_cost || 0) });
+      const res = await repairsAPI.create({ ...form, client_id: Number(form.client_id), estimated_cost: Number(form.estimated_cost || 0) });
       setForm({ client_id: '', device_type: 'laptop', brand: '', model: '', serial_number: '', problem: '', estimated_cost: '', priority: 'normal' });
-      setShowForm(false); load();
-    } catch (err) { alert(err.response?.data?.error || 'Erreur'); }
+      setShowForm(false);
+      await load();
+      // Ouvrir le ticket de réception automatiquement après création
+      setTicketRepair(res.data.repair);
+      showToast('Ticket créé', res.data.repair.ticket + ' — Imprimez le ticket de réception', 'success');
+    } catch (err) { alert(err.response?.data?.detail || err.response?.data?.error || 'Erreur'); }
   };
 
   const nextStatus = async (r) => {
     const idx = STATUSES.indexOf(r.status);
     if (idx >= STATUSES.length - 1) return;
-    try { await repairsAPI.changeStatus(r.id, STATUSES[idx + 1], ''); load(); }
-    catch (err) { alert(err.response?.data?.error || 'Erreur'); }
-  };
-
-  const printRepair = (r) => {
-    const statusHtml = STATUSES.map((s, i) => {
-      const active = STATUSES.indexOf(r.status) >= i;
-      return `<div style="flex:1;text-align:center;padding:6px;border-radius:4px;font-size:11px;background:${active ? '#d4a12e' : '#eee'};color:${active ? '#fff' : '#999'}">${STATUS_LABELS[s]}</div>`;
-    }).join('');
-    const w = window.open('', '_blank', 'width=800,height=600');
-    if (!w) { alert('Autorisez les popups'); return; }
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${r.ticket}</title><style>
-      *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;padding:30px;color:#1a1a1a;font-size:13px}
-      .hdr{text-align:center;margin-bottom:24px;border-bottom:3px solid #d4a12e;padding-bottom:16px}.hdr img{width:70px;height:70px;border-radius:50%;margin-bottom:8px}.hdr h1{font-size:22px;color:#d4a12e;margin:0}
-      .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.box{background:#f8f8f8;padding:12px;border-radius:6px}.box .lb{font-size:11px;color:#888;text-transform:uppercase;margin-bottom:4px}.box .vl{font-weight:600}
-      .sig{margin-top:50px;display:flex;justify-content:space-between}.sig div{width:200px;text-align:center;border-top:1px solid #333;padding-top:8px;font-size:12px}
-      .ft{margin-top:40px;text-align:center;color:#aaa;font-size:11px;border-top:1px solid #eee;padding-top:16px}
-      @media print{body{padding:20px}}
-    </style></head><body>
-      <div class="hdr"><img src="${window.location.origin}/logo.png" alt="KENPRO"/><h1>KENPRO STORE</h1><div style="color:#666;font-size:12px">Fiche de reparation</div></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:20px">
-        <div><strong style="font-size:18px;color:#d4a12e">${r.ticket}</strong></div>
-        <div style="text-align:right"><strong>Date:</strong> ${r.received_at}</div>
-      </div>
-      <div style="display:flex;gap:4px;margin-bottom:20px">${statusHtml}</div>
-      <div class="grid">
-        <div class="box"><div class="lb">Client</div><div class="vl">👤 ${r.client_name}</div>${r.client_phone ? `<div style="font-size:12px;color:#666">📱 ${r.client_phone}</div>` : ''}</div>
-        <div class="box"><div class="lb">Appareil</div><div class="vl">${r.device_type}</div><div style="font-size:12px;color:#666">${r.brand || ''} ${r.model || ''}</div></div>
-      </div>
-      <div style="margin:20px 0"><h3 style="font-size:14px;color:#d4a12e;margin-bottom:10px">🔍 Probleme</h3><p>${r.problem}</p></div>
-      ${r.diagnostic ? `<div style="margin:20px 0"><h3 style="font-size:14px;color:#d4a12e;margin-bottom:10px">🩺 Diagnostic</h3><p>${r.diagnostic}</p></div>` : ''}
-      <div class="grid" style="grid-template-columns:1fr 1fr 1fr">
-        <div class="box"><div class="lb">Estimation</div><div class="vl">${fmt(r.estimated_cost)}</div></div>
-        <div class="box"><div class="lb">Pieces</div><div class="vl">${fmt(r.parts_cost)}</div></div>
-        <div class="box"><div class="lb">Main d'oeuvre</div><div class="vl">${fmt(r.labor_cost)}</div></div>
-      </div>
-      <div class="sig"><div>Le technicien</div><div>Le client</div></div>
-      <div class="ft">KENPRO STORE — Document genere le ${new Date().toLocaleDateString('fr-FR')}</div>
-    </body></html>`);
-    w.document.close();
-    setTimeout(() => w.print(), 300);
-  };
-
-  const sendRepairWA = (r) => {
-    if (!r.client_phone) { alert('Ce client n\'a pas de numero'); return; }
-    const phone = r.client_phone.replace(/\s/g, '').replace(/^\+/, '');
-    const msg = `Bonjour ${r.client_name},\nVotre appareil (${r.brand} ${r.model}) est maintenant au statut: ${STATUS_LABELS[r.status]}.\nTicket: ${r.ticket}\nMerci, KENPRO STORE.`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    const newStatus = STATUSES[idx + 1];
+    try {
+      await repairsAPI.changeStatus(r.id, newStatus, '');
+      await load();
+      // Notification WhatsApp automatique si le client a un numéro
+      if (r.client_phone && WA_MESSAGES[newStatus]) {
+        const msg = WA_MESSAGES[newStatus](r);
+        const phone = r.client_phone.replace(/\s/g, '').replace(/^\+/, '');
+        showToast(
+          '📱 WhatsApp prêt',
+          `Statut → ${STATUS_LABELS[newStatus]} — cliquez pour envoyer`,
+          'info'
+        );
+        // Proposer d'ouvrir WhatsApp sans forcer (popup bloqué si non initié)
+        if (window.confirm(`Envoyer une notification WhatsApp au client ?\n\n"${msg.slice(0, 100)}..."`)) {
+          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+      }
+    } catch (err) { alert(err.response?.data?.detail || err.response?.data?.error || 'Erreur'); }
   };
 
   if (loading) return <div className="loading">Chargement...</div>;
 
   return (
     <div>
-      <div className="page-header"><h2>🔧 Reparations ({repairs.length})</h2><button className="btn-primary" onClick={openForm}>+ Reparation</button></div>
+      {ticketRepair && (
+        <RepairTicketPrinter repair={ticketRepair} onClose={() => setTicketRepair(null)} />
+      )}
+
+      <div className="page-header"><h2>🔧 Réparations ({repairs.length})</h2><button className="btn-primary" onClick={openForm}>+ Réparation</button></div>
 
       <div className="filter-bar">
         <button className={`btn-filter ${filter === '' ? 'active' : ''}`} onClick={() => setFilter('')}>Tout</button>
@@ -1229,8 +1220,13 @@ function Repairs() {
             {r.total_cost > 0 && <span className="gold bold" style={{ fontSize: 16 }}>{fmt(r.total_cost)}</span>}
           </div>
           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-            <button className="btn-small btn-secondary" onClick={() => printRepair(r)}>🖨️ Imprimer</button>
-            <button className="btn-small btn-secondary" style={{ background: '#1c3b2a', color: '#2dd4a0', border: '1px solid #2dd4a0' }} onClick={() => sendRepairWA(r)}>📱 WhatsApp</button>
+            <button className="btn-small btn-secondary" onClick={() => setTicketRepair(r)} title="Ticket thermique 58mm">🎫 Ticket</button>
+            {r.client_phone && WA_MESSAGES[r.status] && (
+              <button className="btn-small btn-secondary" style={{ background:'#1c3b2a', color:'#2dd4a0', border:'1px solid #2dd4a0' }}
+                onClick={() => { const phone=r.client_phone.replace(/\s/g,'').replace(/^\+/,''); window.open(`https://wa.me/${phone}?text=${encodeURIComponent(WA_MESSAGES[r.status]?.(r)||'')}`, '_blank'); }}>
+                📱 WhatsApp
+              </button>
+            )}
             {r.status !== 'livre' && STATUSES.indexOf(r.status) < STATUSES.length - 1 && (
               <button className="btn-small btn-primary" onClick={() => nextStatus(r)}>→ {STATUS_LABELS[STATUSES[STATUSES.indexOf(r.status) + 1]]}</button>
             )}
