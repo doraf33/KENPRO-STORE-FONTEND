@@ -8,6 +8,7 @@ import ShopSettings        from './components/ShopSettings';
 import RepairTicketPrinter from './components/RepairTicketPrinter';
 import OnlineStore         from './components/OnlineStore';
 import ProductStorePanel   from './components/ProductStorePanel';
+import SyncStatus, { ConnectionDot } from './components/SyncStatus';
 import './App.css';
 
 const fmt = (n) => Number(n || 0).toLocaleString('fr-FR') + ' FCFA';
@@ -2396,6 +2397,8 @@ function AppShell() {
 
   return (
     <div className="app">
+      {/* Bannière connexion / sync — affichée uniquement si offline ou queue > 0 */}
+      <SyncStatus />
       <button className="menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
@@ -2405,6 +2408,7 @@ function AppShell() {
             {isVendor ? '🛒' : '👨‍💼'} {user.name}
             {isVendor && <span style={{ display: 'block', fontSize: 11, color: '#7a8094', marginTop: 2 }}>Vendeur</span>}
           </div>
+          <ConnectionDot />
         </div>
         <nav>
           {TABS.map(t => (
