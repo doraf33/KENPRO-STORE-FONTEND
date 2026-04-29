@@ -7,6 +7,7 @@ import TicketPrinter       from './components/TicketPrinter';
 import ShopSettings        from './components/ShopSettings';
 import RepairTicketPrinter from './components/RepairTicketPrinter';
 import OnlineStore         from './components/OnlineStore';
+import ProductStorePanel   from './components/ProductStorePanel';
 import './App.css';
 
 const fmt = (n) => Number(n || 0).toLocaleString('fr-FR') + ' FCFA';
@@ -569,9 +570,10 @@ function Products() {
   const [editId, setEditId]         = useState(null);
   const [form, setForm]             = useState({ name: '', category: '', price: '', cost_price: '', quantity: '', min_stock: '5', barcode: '' });
   const [loading, setLoading]       = useState(true);
-  const [showScanner, setShowScanner] = useState(false);
-  const [labelProduct, setLabelProduct] = useState(null);   // produit pour LabelPrinter
-  const [scanResult, setScanResult] = useState(null);        // résultat du scan (produit ou null)
+  const [showScanner,   setShowScanner]  = useState(false);
+  const [labelProduct,  setLabelProduct] = useState(null);
+  const [storeProduct,  setStoreProduct] = useState(null);  // pour ProductStorePanel
+  const [scanResult,    setScanResult]   = useState(null);
   const { show: showToast } = useToast();
 
   const load = async () => {
@@ -623,8 +625,10 @@ function Products() {
   return (
     <div>
       {/* Modales */}
-      {showScanner && <BarcodeScanner onDetect={handleBarcodeDetected} onClose={() => setShowScanner(false)} title="Scanner un produit" />}
-      {labelProduct && <LabelPrinter product={labelProduct} onClose={() => { setLabelProduct(null); load(); }} />}
+      {showScanner  && <BarcodeScanner   onDetect={handleBarcodeDetected} onClose={() => setShowScanner(false)} title="Scanner un produit" />}
+      {labelProduct && <LabelPrinter    product={labelProduct}  onClose={() => { setLabelProduct(null);  load(); }} />}
+      {storeProduct && <ProductStorePanel product={storeProduct} onClose={() => { setStoreProduct(null); load(); }}
+                          onSave={updated => setProducts(ps => ps.map(p => p.id === updated.id ? { ...p, ...updated } : p))} />}
 
       <div className="page-header">
         <h2>📦 Produits ({products.length})</h2>
@@ -724,6 +728,7 @@ function Products() {
               <td>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button className="btn-icon" onClick={() => handleEdit(p)}>✏️</button>
+                  <button className="btn-icon" onClick={() => setStoreProduct(p)} title="Boutique en ligne">🛒</button>
                   <button className="btn-icon" onClick={() => setLabelProduct(p)} title="Imprimer étiquette">🏷️</button>
                   <button className="btn-icon red" onClick={() => handleDelete(p.id)}>🗑️</button>
                 </div>

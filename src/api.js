@@ -59,8 +59,12 @@ export const productsAPI = {
   adjustStock: (id, adjustment, reason) => api.post(`/products/${id}/stock`, { adjustment, reason }),
   getAlerts: () => api.get('/products/alerts'),
   getCategories: () => api.get('/products/categories'),
-  getByBarcode: (code) => api.get(`/products/barcode/${encodeURIComponent(code)}`),
-  generateBarcode: (id) => api.post(`/products/${id}/barcode`),
+  getByBarcode:    (code)       => api.get(`/products/barcode/${encodeURIComponent(code)}`),
+  generateBarcode: (id)         => api.post(`/products/${id}/barcode`),
+  uploadPhotos:    (id, formData) => api.post(`/products/${id}/photos`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  deletePhoto:     (id, url)    => api.delete(`/products/${id}/photos`, { params: { url } }),
+  setMainPhoto:    (id, url)    => api.put(`/products/${id}/photos/main`, null, { params: { url } }),
+  updateStore:     (id, formData) => api.put(`/products/${id}/store`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 
 // ── CLIENTS ──
