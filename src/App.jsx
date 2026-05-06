@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext, createContext, useRef, useCallback } from 'react';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { authAPI, productsAPI, clientsAPI, invoicesAPI, repairsAPI, suppliersAPI, creditsAPI, creditPaymentsAPI, dashboardAPI, modulesAPI, vendorAPI, adminReportsAPI, notificationsAPI, settingsAPI, ticketsAPI, publicStoreAPI } from './api';
+import { authAPI, productsAPI, clientsAPI, invoicesAPI, repairsAPI, suppliersAPI, creditsAPI, creditPaymentsAPI, dashboardAPI, modulesAPI, vendorAPI, adminReportsAPI, notificationsAPI, settingsAPI, ticketsAPI, publicStoreAPI, superAdminAPI, myShopAPI } from './api';
 import { BarcodeScanner, BarcodeDisplay } from './BarcodeScanner';
 import LabelPrinter        from './components/LabelPrinter';
 import TicketPrinter       from './components/TicketPrinter';
@@ -9,6 +9,8 @@ import RepairTicketPrinter from './components/RepairTicketPrinter';
 import OnlineStore         from './components/OnlineStore';
 import ProductStorePanel   from './components/ProductStorePanel';
 import SyncStatus, { ConnectionDot } from './components/SyncStatus';
+import SuperAdminPanel     from './components/SuperAdminPanel';
+import { TenantProvider }  from './context/TenantContext';
 import './App.css';
 
 const fmt = (n) => Number(n || 0).toLocaleString('fr-FR') + ' FCFA';
@@ -174,9 +176,15 @@ function Login({ onLogin }) {
     setLoading(true); setError('');
     try {
       const res = await authAPI.login(username, password);
+      // Merge is_super_admin + tenant_id depuis la réponse top-level dans l'objet user
+      const userToStore = {
+        ...res.data.user,
+        is_super_admin: res.data.is_super_admin ?? false,
+        tenant_id:      res.data.tenant_id ?? null,
+      };
       localStorage.setItem('kenpro_token', res.data.token);
-      localStorage.setItem('kenpro_user', JSON.stringify(res.data.user));
-      onLogin(res.data.user);
+      localStorage.setItem('kenpro_user', JSON.stringify(userToStore));
+      onLogin(userToStore);
     } catch (err) { setError(err.response?.data?.error || 'Erreur de connexion'); }
     setLoading(false);
   };
@@ -2288,6 +2296,7 @@ const ADMIN_TABS = [
   { id: 'admin_reports',label: 'Rapports vendeurs',  icon: '📋' },
   { id: 'shop_settings', label: 'Paramètres boutique', icon: '⚙️' },
   { id: 'online_store',  label: 'Boutique en ligne',   icon: '🛒' },
+  { id: 'super_admin',   label: '🏢 Super Admin',       icon: '🔑', superOnly: true },
 ];
 const VENDOR_TABS = [
   { id: 'vendor_dashboard', label: 'Mon tableau de bord', icon: '🏠' },
@@ -2341,12 +2350,17 @@ function AppShell() {
   const { show: showToast } = useToast();
   const { isDark, toggleTheme }   = useTheme();
 
-  // Session persistée
+  // Session persistée — force re-login si user sans is_super_admin (cache ancien)
   useEffect(() => {
     const saved = localStorage.getItem('kenpro_user');
     const token = localStorage.getItem('kenpro_token');
     if (saved && token) {
       const u = JSON.parse(saved);
+      // Migration douce : si role super_admin mais pas le flag, l'ajouter
+      if (u.role === 'super_admin' && u.is_super_admin === undefined) {
+        u.is_super_admin = true;
+        localStorage.setItem('kenpro_user', JSON.stringify(u));
+      }
       setUser(u);
       if (u.role === 'vendeur' || u.role === 'vendor') setTab('vendor_dashboard');
     }
@@ -2370,8 +2384,11 @@ function AppShell() {
     );
   };
 
-  const isVendor = user?.role === 'vendeur' || user?.role === 'vendor';
-  const TABS     = isVendor ? VENDOR_TABS : ADMIN_TABS;
+  const isVendor     = user?.role === 'vendeur' || user?.role === 'vendor';
+  const isSuperAdmin = user?.role === 'super_admin' || user?.is_super_admin;
+  const TABS         = isVendor
+    ? VENDOR_TABS
+    : ADMIN_TABS.filter(t => !t.superOnly || isSuperAdmin);
 
   const renderPage = () => {
     switch (tab) {
@@ -2386,6 +2403,7 @@ function AppShell() {
       case 'admin_reports':    return <AdminReports />;
       case 'shop_settings':    return <ShopSettings />;
       case 'online_store':     return <OnlineStore />;
+      case 'super_admin':      return <SuperAdminPanel />;
       case 'vendor_dashboard': return <VendorDashboard />;
       case 'my_report':        return <VendorReportForm onSubmitted={() => { setTab('my_reports'); showToast('Rapport soumis !', 'Votre rapport journalier a été envoyé.', 'success'); }} />;
       case 'my_reports':       return <MyReports />;
