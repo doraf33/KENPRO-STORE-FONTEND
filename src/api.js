@@ -149,11 +149,13 @@ export const adminAPI = {
 
 // ── DASHBOARD ANALYTIQUE ──
 export const dashboardAPI = {
-  getKPI: (period = 'month') => api.get('/dashboard/kpi', { params: { period } }),
-  getRevenueChart: () => api.get('/dashboard/revenue-chart'),
-  getCategoryChart: (period = 'all') => api.get('/dashboard/category-chart', { params: { period } }),
-  getTopProducts: (period = 'all') => api.get('/dashboard/top-products', { params: { period } }),
-  getAlerts: () => api.get('/dashboard/alerts'),
+  getKPI:           (period = 'month') => api.get('/dashboard/kpi', { params: { period } }),
+  getRevenueChart:  ()                 => api.get('/dashboard/revenue-chart'),
+  getCategoryChart: (period = 'all')   => api.get('/dashboard/category-chart', { params: { period } }),
+  getTopProducts:   (period = 'all')   => api.get('/dashboard/top-products', { params: { period } }),
+  getAlerts:        ()                 => api.get('/dashboard/alerts'),
+  getPayments:      ()                 => api.get('/dashboard/payments'),   // Phase 3: widget MoMo
+  getFinancial:     (period = 'month') => api.get('/dashboard/financial-summary', { params: { period } }),
 };
 
 // ── MODULES DYNAMIQUES ──
@@ -233,6 +235,14 @@ export const superAdminAPI = {
   getStats:        ()         => api.get('/super-admin/stats'),
   impersonate:     (id)       => api.post(`/super-admin/impersonate/${id}`),
   getCountries:    ()         => api.get('/super-admin/countries'),
+  // Phase 3 — Dashboard plateforme
+  getDashboard:         ()    => api.get('/super-admin/dashboard'),
+  getDashboardKpis:     ()    => api.get('/super-admin/dashboard/kpis'),
+  getDashboardGrowth:   ()    => api.get('/super-admin/dashboard/growth'),
+  getDashboardCountries:()    => api.get('/super-admin/dashboard/revenue-by-country'),
+  getTopTenants:        (n)   => api.get('/super-admin/dashboard/top-tenants', { params: { limit: n || 10 } }),
+  getDashboardPlans:    ()    => api.get('/super-admin/dashboard/plans'),
+  getDashboardAlerts:   ()    => api.get('/super-admin/dashboard/alerts'),
 };
 
 // ── MA BOUTIQUE ──

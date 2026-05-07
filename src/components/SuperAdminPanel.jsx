@@ -217,23 +217,139 @@ function CreateTenantForm({ onCreated, onCancel }) {
   );
 }
 
+// ── Dashboard plateforme ──────────────────────────────────────
+function PlatformDashboard({ dashboard }) {
+  if (!dashboard) return null;
+  const { kpis, growth, revenue_by_country, top_tenants, plan_distribution, alerts } = dashboard;
+  const fmt = n => Number(n||0).toLocaleString('fr-FR');
+
+  const SEVERITY_COLOR = { critical:'#ef6461', warning:'#f0923c', info:'#5b9cf6' };
+
+  return (
+    <div style={{ marginBottom:20 }}>
+      {/* KPIs globaux */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:10, marginBottom:14 }}>
+        {[
+          { label:'Boutiques totales', value: kpis.tenants.total,        color:'#5b9cf6', icon:'🏪' },
+          { label:'Boutiques actives', value: kpis.tenants.active,       color:'#2dd4a0', icon:'✅' },
+          { label:'En trial',          value: kpis.tenants.trial,        color:'#f0923c', icon:'🕐' },
+          { label:'CA total (FCFA)',   value: fmt(kpis.revenue.total),   color:'#d4a12e', icon:'💰' },
+          { label:'CA ce mois',        value: fmt(kpis.revenue.this_month), color:'#d4a12e', icon:'📅' },
+          { label:'Paiements MoMo',    value: `${kpis.payments.rate}% ok`, color:'#2dd4a0', icon:'📱' },
+        ].map(k => (
+          <div key={k.label} style={{ background:'#1b1f30', border:'1px solid #252a3a', borderRadius:10, padding:'10px 14px' }}>
+            <div style={{ fontSize:10, color:'#7a8094', marginBottom:2 }}>{k.icon} {k.label}</div>
+            <div style={{ fontSize:18, fontWeight:700, color:k.color }}>{k.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
+        {/* Top boutiques */}
+        <div style={S.card}>
+          <div style={{ fontWeight:700, color:'#eaedf3', marginBottom:10 }}>🏆 Top boutiques par CA</div>
+          {top_tenants.slice(0,5).map((t,i) => (
+            <div key={t.id} style={{ display:'flex', justifyContent:'space-between', padding:'4px 0',
+                                      borderBottom:'1px solid #252a3a', fontSize:12 }}>
+              <span style={{ color: i===0?'#d4a12e':'#eaedf3' }}>
+                {i===0?'🥇':i===1?'🥈':i===2?'🥉':'  '} {t.name.slice(0,20)}
+              </span>
+              <span style={{ color:'#d4a12e', fontWeight:700 }}>{fmt(t.revenue)} FCFA</span>
+            </div>
+          ))}
+          {top_tenants.length === 0 && <div style={{ color:'#7a8094', fontSize:12 }}>Aucune donnée</div>}
+        </div>
+
+        {/* Revenus par pays + Plans */}
+        <div>
+          <div style={{ ...S.card, marginBottom:10 }}>
+            <div style={{ fontWeight:700, color:'#eaedf3', marginBottom:8 }}>🌍 Revenus par pays</div>
+            {revenue_by_country.slice(0,5).map(c => (
+              <div key={c.country} style={{ display:'flex', justifyContent:'space-between', fontSize:12,
+                                            padding:'3px 0', borderBottom:'1px solid #1b1f30' }}>
+                <span style={{ color:'#7a8094' }}>{c.country_name} ({c.tenants} boutiques)</span>
+                <span style={{ color:'#d4a12e', fontWeight:600 }}>{fmt(c.revenue)}</span>
+              </div>
+            ))}
+          </div>
+          <div style={S.card}>
+            <div style={{ fontWeight:700, color:'#eaedf3', marginBottom:8 }}>📦 Plans</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+              {plan_distribution.map(p => (
+                <div key={p.plan} style={{ background: (PLAN_COLORS[p.plan]||'#7a8094')+'22',
+                                           color: PLAN_COLORS[p.plan]||'#7a8094',
+                                           padding:'4px 10px', borderRadius:20, fontSize:12, fontWeight:700 }}>
+                  {p.plan} ({p.count})
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Croissance 12 mois */}
+      <div style={S.card}>
+        <div style={{ fontWeight:700, color:'#eaedf3', marginBottom:8 }}>📈 Croissance boutiques (12 mois)</div>
+        <div style={{ display:'flex', alignItems:'flex-end', gap:4, height:60 }}>
+          {growth.map((g, i) => {
+            const max = Math.max(...growth.map(x => x.new_tenants), 1);
+            const h   = Math.round((g.new_tenants / max) * 50) + 4;
+            return (
+              <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
+                <div style={{ fontSize:9, color:'#7a8094' }}>{g.new_tenants > 0 ? g.new_tenants : ''}</div>
+                <div style={{ width:'100%', height:h, background: g.new_tenants > 0 ? '#5b9cf6' : '#252a3a',
+                              borderRadius:'2px 2px 0 0', transition:'height .3s' }} title={`${g.month}: ${g.new_tenants}`} />
+                <div style={{ fontSize:8, color:'#7a8094', transform:'rotate(-45deg)', transformOrigin:'center' }}>{g.month}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Alertes */}
+      {alerts && alerts.length > 0 && (
+        <div style={S.card}>
+          <div style={{ fontWeight:700, color:'#eaedf3', marginBottom:8 }}>🚨 Alertes plateforme</div>
+          {alerts.map((a, i) => (
+            <div key={i} style={{ display:'flex', gap:10, padding:'6px 0', borderBottom:'1px solid #1b1f30',
+                                   fontSize:12, alignItems:'center' }}>
+              <span style={{ color: SEVERITY_COLOR[a.severity] || '#7a8094', fontSize:16 }}>
+                {a.severity === 'critical' ? '🔴' : '🟡'}
+              </span>
+              <div>
+                <div style={{ color:'#eaedf3', fontWeight:600 }}>{a.title}</div>
+                <div style={{ color:'#7a8094' }}>{a.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 export default function SuperAdminPanel() {
-  const [tenants,     setTenants]     = useState([]);
-  const [stats,       setStats]       = useState(null);
-  const [loading,     setLoading]     = useState(true);
-  const [showCreate,  setShowCreate]  = useState(false);
-  const [search,      setSearch]      = useState('');
+  const [tenants,      setTenants]     = useState([]);
+  const [stats,        setStats]       = useState(null);
+  const [dashboard,    setDashboard]   = useState(null);
+  const [loading,      setLoading]     = useState(true);
+  const [showCreate,   setShowCreate]  = useState(false);
+  const [search,       setSearch]      = useState('');
+  const [activeTab,    setActiveTab]   = useState('dashboard'); // 'dashboard' | 'boutiques'
   const [impersonating, setImpersonating] = useState(null);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [tRes, sRes] = await Promise.all([
+      const [tRes, sRes, dRes] = await Promise.all([
         superAdminAPI.getTenants({ per_page: 50 }),
         superAdminAPI.getStats(),
+        superAdminAPI.getDashboard(),
       ]);
       setTenants(tRes.data.tenants || []);
       setStats(sRes.data);
+      setDashboard(dRes.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -267,29 +383,45 @@ export default function SuperAdminPanel() {
     !search || t.name.toLowerCase().includes(search.toLowerCase()) || t.slug.includes(search)
   );
 
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) return <div className="loading">Chargement Super Admin...</div>;
 
   return (
     <div>
       <div className="page-header">
         <h2>🏢 Super Administration</h2>
-        <button style={S.btnPri} onClick={() => setShowCreate(!showCreate)}>
-          {showCreate ? '✕ Annuler' : '+ Nouvelle boutique'}
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={() => load()} style={{ ...S.btnSec, fontSize:12 }}>🔄 Actualiser</button>
+          <button style={S.btnPri} onClick={() => setShowCreate(!showCreate)}>
+            {showCreate ? '✕ Annuler' : '+ Nouvelle boutique'}
+          </button>
+        </div>
+      </div>
+
+      {/* Onglets Dashboard / Boutiques */}
+      <div className="filter-bar" style={{ marginBottom:16 }}>
+        <button className={`btn-filter ${activeTab==='dashboard'?'active':''}`} onClick={() => setActiveTab('dashboard')}>
+          📊 Dashboard plateforme
+        </button>
+        <button className={`btn-filter ${activeTab==='boutiques'?'active':''}`} onClick={() => setActiveTab('boutiques')}>
+          🏪 Gestion boutiques ({tenants.length})
         </button>
       </div>
 
-      <GlobalStats stats={stats} />
+      {activeTab === 'dashboard' && <PlatformDashboard dashboard={dashboard} />}
+
+      {activeTab === 'boutiques' && <GlobalStats stats={stats} />}
 
       {showCreate && (
         <CreateTenantForm
-          onCreated={t => { setTenants(prev => [t, ...prev]); setShowCreate(false); }}
+          onCreated={t => { setTenants(prev => [t, ...prev]); setShowCreate(false); setActiveTab('boutiques'); }}
           onCancel={() => setShowCreate(false)}
         />
       )}
 
-      <input type="text" placeholder="🔍 Rechercher une boutique..." value={search}
-             onChange={e => setSearch(e.target.value)} className="search-input" style={{ marginBottom:12 }} />
-
+      {activeTab === 'boutiques' && (
+        <>
+        <input type="text" placeholder="🔍 Rechercher une boutique..." value={search}
+               onChange={e => setSearch(e.target.value)} className="search-input" style={{ marginBottom:12 }} />
       <div className="table-container">
         <table>
           <thead>
@@ -340,6 +472,8 @@ export default function SuperAdminPanel() {
           </tbody>
         </table>
       </div>
+        </>
+      )}
     </div>
   );
 }
