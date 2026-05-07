@@ -24,12 +24,15 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem('kenpro_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    // Ajouter X-Tenant-Slug si pas déjà dans le JWT
+    // Pour les super_admins sans tenant_id dans le JWT,
+    // ajouter X-Tenant-Slug depuis le localStorage (défaut : kenpro-store)
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      if (!payload.tenant_id && !payload.is_super_admin) {
-        // Fallback : utilise le slug stocké en localStorage
-        const slug = localStorage.getItem('kenpro_tenant_slug') || 'kenpro-store';
+      if (!payload.tenant_id) {
+        const user = JSON.parse(localStorage.getItem('kenpro_user') || '{}');
+        const slug = localStorage.getItem('kenpro_tenant_slug')
+                  || user.default_tenant_slug
+                  || 'kenpro-store';
         config.headers['X-Tenant-Slug'] = slug;
       }
     } catch { /* token invalide */ }
