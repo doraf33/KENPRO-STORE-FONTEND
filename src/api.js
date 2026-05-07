@@ -232,6 +232,7 @@ export const superAdminAPI = {
   deleteTenant:    (id)       => api.delete(`/super-admin/tenants/${id}`),
   getStats:        ()         => api.get('/super-admin/stats'),
   impersonate:     (id)       => api.post(`/super-admin/impersonate/${id}`),
+  getCountries:    ()         => api.get('/super-admin/countries'),
 };
 
 // ── MA BOUTIQUE ──

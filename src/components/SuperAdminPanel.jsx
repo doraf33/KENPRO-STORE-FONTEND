@@ -15,8 +15,24 @@ const S = {
 
 const PLAN_COLORS = { free:'#7a8094', starter:'#5b9cf6', business:'#2dd4a0', enterprise:'#d4a12e' };
 const STATUS_COLORS = { trial:'#f0923c', active:'#2dd4a0', suspended:'#ef6461', cancelled:'#7a8094' };
-const COUNTRIES = ['CM','SN','CI','NG','KE','GH','BF','ML','RW','TZ','ET'];
-const CURRENCIES = ['XAF','XOF','NGN','GHS','KES','RWF','TZS','ETB'];
+
+// Pays supportés avec métadonnées (miroir du backend SUPPORTED_COUNTRIES)
+const SUPPORTED_COUNTRIES = [
+  { code:'CM', flag:'🇨🇲', name:'Cameroun',       currency:'XAF', language:'fr', timezone:'Africa/Douala' },
+  { code:'SN', flag:'🇸🇳', name:'Sénégal',        currency:'XOF', language:'fr', timezone:'Africa/Dakar' },
+  { code:'CI', flag:'🇨🇮', name:'Côte d\'Ivoire', currency:'XOF', language:'fr', timezone:'Africa/Abidjan' },
+  { code:'NG', flag:'🇳🇬', name:'Nigeria',        currency:'NGN', language:'en', timezone:'Africa/Lagos' },
+  { code:'KE', flag:'🇰🇪', name:'Kenya',          currency:'KES', language:'en', timezone:'Africa/Nairobi' },
+  { code:'GH', flag:'🇬🇭', name:'Ghana',          currency:'GHS', language:'en', timezone:'Africa/Accra' },
+  { code:'BJ', flag:'🇧🇯', name:'Bénin',          currency:'XOF', language:'fr', timezone:'Africa/Porto-Novo' },
+  { code:'TG', flag:'🇹🇬', name:'Togo',           currency:'XOF', language:'fr', timezone:'Africa/Lome' },
+  { code:'ML', flag:'🇲🇱', name:'Mali',           currency:'XOF', language:'fr', timezone:'Africa/Bamako' },
+  { code:'NE', flag:'🇳🇪', name:'Niger',          currency:'XOF', language:'fr', timezone:'Africa/Niamey' },
+  { code:'BF', flag:'🇧🇫', name:'Burkina Faso',   currency:'XOF', language:'fr', timezone:'Africa/Ouagadougou' },
+  { code:'RW', flag:'🇷🇼', name:'Rwanda',         currency:'RWF', language:'fr', timezone:'Africa/Kigali' },
+  { code:'TZ', flag:'🇹🇿', name:'Tanzanie',       currency:'TZS', language:'en', timezone:'Africa/Dar_es_Salaam' },
+  { code:'ZA', flag:'🇿🇦', name:'Afrique du Sud', currency:'ZAR', language:'en', timezone:'Africa/Johannesburg' },
+];
 
 function GlobalStats({ stats }) {
   if (!stats) return null;
@@ -39,45 +55,164 @@ function GlobalStats({ stats }) {
 }
 
 function CreateTenantForm({ onCreated, onCancel }) {
-  const [form, setForm] = useState({ slug:'', name:'', owner_email:'', owner_phone:'', country_code:'CM', country_name:'Cameroun', currency:'XAF', language:'fr', subscription_plan:'free' });
+  const EMPTY = { slug:'', name:'', owner_email:'', owner_phone:'',
+                  owner_full_name:'', country_code:'', subscription_plan:'free' };
+  const [form,    setForm]    = useState(EMPTY);
   const [loading, setLoading] = useState(false);
-  const set = (k,v) => setForm(f => ({...f,[k]:v}));
+  const [error,   setError]   = useState('');
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  // Quand le pays change → auto-remplir devise, langue, timezone
+  const handleCountryChange = (code) => {
+    const meta = SUPPORTED_COUNTRIES.find(c => c.code === code);
+    setForm(f => ({
+      ...f,
+      country_code: code,
+      // On laisse le backend compléter les autres champs via SUPPORTED_COUNTRIES
+    }));
+    setError('');
+  };
+
+  const selectedCountry = SUPPORTED_COUNTRIES.find(c => c.code === form.country_code);
 
   const handleCreate = async () => {
-    if (!form.slug || !form.name || !form.owner_email) { alert('Slug, nom et email obligatoires'); return; }
-    setLoading(true);
+    if (!form.slug)         { setError('Le slug est obligatoire'); return; }
+    if (!form.name)         { setError('Le nom est obligatoire');  return; }
+    if (!form.owner_email)  { setError('L\'email est obligatoire'); return; }
+    if (!form.country_code) { setError('Le pays est OBLIGATOIRE — il détermine les moyens de paiement'); return; }
+
+    setLoading(true); setError('');
     try {
       const r = await superAdminAPI.createTenant(form);
       onCreated(r.data.tenant);
-    } catch (e) { alert(e.response?.data?.detail || 'Erreur'); }
-    finally { setLoading(false); }
+    } catch (e) {
+      const detail = e.response?.data?.detail;
+      setError(Array.isArray(detail)
+        ? detail.map(d => d.msg).join(' · ')
+        : detail || 'Erreur lors de la création');
+    } finally { setLoading(false); }
   };
+
+  const lbl = { fontSize:11, color:'#7a8094', display:'block', marginBottom:4 };
+  const req  = { ...lbl, color:'#d4a12e' };  // champs obligatoires en or
 
   return (
     <div style={S.card}>
-      <h3 style={{ color:'#eaedf3', margin:'0 0 16px' }}>➕ Nouvelle boutique</h3>
+      <h3 style={{ color:'#eaedf3', margin:'0 0 4px' }}>➕ Nouvelle boutique</h3>
+      <p style={{ fontSize:12, color:'#7a8094', marginBottom:16 }}>
+        Le pays est <strong style={{ color:'#d4a12e' }}>obligatoire</strong> — il détermine les moyens de paiement disponibles.
+      </p>
+
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12 }}>
-        <div><label style={{ fontSize:11, color:'#7a8094', display:'block', marginBottom:4 }}>Slug * (ex: boutique-marie)</label>
-          <input style={S.input} value={form.slug} onChange={e => set('slug',e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,''))} placeholder="boutique-marie" /></div>
-        <div><label style={{ fontSize:11, color:'#7a8094', display:'block', marginBottom:4 }}>Nom *</label>
-          <input style={S.input} value={form.name} onChange={e => set('name',e.target.value)} placeholder="Boutique Marie" /></div>
-        <div><label style={{ fontSize:11, color:'#7a8094', display:'block', marginBottom:4 }}>Email propriétaire *</label>
-          <input style={S.input} value={form.owner_email} onChange={e => set('owner_email',e.target.value)} placeholder="marie@example.com" /></div>
-        <div><label style={{ fontSize:11, color:'#7a8094', display:'block', marginBottom:4 }}>Téléphone</label>
-          <input style={S.input} value={form.owner_phone} onChange={e => set('owner_phone',e.target.value)} placeholder="+237 6XX XX XX XX" /></div>
-        <div><label style={{ fontSize:11, color:'#7a8094', display:'block', marginBottom:4 }}>Pays</label>
-          <select style={S.input} value={form.country_code} onChange={e => set('country_code',e.target.value)}>
-            {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select></div>
-        <div><label style={{ fontSize:11, color:'#7a8094', display:'block', marginBottom:4 }}>Devise</label>
-          <select style={S.input} value={form.currency} onChange={e => set('currency',e.target.value)}>
-            {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select></div>
+
+        {/* Slug */}
+        <div>
+          <label style={req}>Slug * (identifiant unique)</label>
+          <input style={S.input} value={form.slug} placeholder="boutique-marie"
+            onChange={e => set('slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,''))} />
+          <div style={{ fontSize:10, color:'#7a8094', marginTop:2 }}>Lettres, chiffres, tirets uniquement</div>
+        </div>
+
+        {/* Nom */}
+        <div>
+          <label style={req}>Nom de la boutique *</label>
+          <input style={S.input} value={form.name} placeholder="Boutique Marie Tech"
+            onChange={e => set('name', e.target.value)} />
+        </div>
+
+        {/* Email */}
+        <div>
+          <label style={req}>Email propriétaire *</label>
+          <input style={S.input} type="email" value={form.owner_email} placeholder="marie@example.com"
+            onChange={e => set('owner_email', e.target.value)} />
+        </div>
+
+        {/* Téléphone */}
+        <div>
+          <label style={lbl}>Téléphone propriétaire</label>
+          <input style={S.input} value={form.owner_phone} placeholder="+237 6XX XX XX XX"
+            onChange={e => set('owner_phone', e.target.value)} />
+        </div>
+
+        {/* NOM COMPLET */}
+        <div style={{ gridColumn:'span 2' }}>
+          <label style={lbl}>Nom complet propriétaire</label>
+          <input style={S.input} value={form.owner_full_name} placeholder="Marie Dupont"
+            onChange={e => set('owner_full_name', e.target.value)} />
+        </div>
+
+        {/* PAYS — OBLIGATOIRE */}
+        <div>
+          <label style={{ ...req, fontSize:13 }}>🌍 Pays * (OBLIGATOIRE)</label>
+          <select style={{ ...S.input, border: form.country_code ? '1px solid #252a3a' : '1px solid #d4a12e' }}
+            value={form.country_code}
+            onChange={e => handleCountryChange(e.target.value)}>
+            <option value="">— Choisir un pays —</option>
+            {SUPPORTED_COUNTRIES.map(c => (
+              <option key={c.code} value={c.code}>
+                {c.flag} {c.name} ({c.code})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Infos auto-remplies */}
+        {selectedCountry && (
+          <div style={{ background:'#0f1420', borderRadius:8, padding:'10px 14px', fontSize:12 }}>
+            <div style={{ color:'#7a8094', marginBottom:6, fontSize:11 }}>✨ Rempli automatiquement</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:4 }}>
+              <span style={{ color:'#7a8094' }}>Devise</span>
+              <span style={{ color:'#d4a12e', fontWeight:700 }}>{selectedCountry.currency}</span>
+              <span style={{ color:'#7a8094' }}>Langue</span>
+              <span style={{ color:'#eaedf3' }}>{selectedCountry.language === 'fr' ? 'Français' : 'English'}</span>
+              <span style={{ color:'#7a8094' }}>Fuseau</span>
+              <span style={{ color:'#eaedf3', fontSize:10 }}>{selectedCountry.timezone}</span>
+              <span style={{ color:'#7a8094' }}>Paiements</span>
+              <span style={{ color:'#2dd4a0', fontSize:10 }}>
+                {{CM:'MTN, Orange', SN:'Wave, Orange', CI:'Wave, MTN, Orange',
+                  NG:'Paystack, Flutterwave', KE:'M-Pesa', GH:'MTN, Paystack'}[selectedCountry.code]
+                  || 'Voir config paiements'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Plan */}
+        <div style={{ gridColumn:'span 2' }}>
+          <label style={lbl}>Plan d'abonnement</label>
+          <select style={S.input} value={form.subscription_plan}
+            onChange={e => set('subscription_plan', e.target.value)}>
+            <option value="free">Gratuit (50 produits, 2 utilisateurs)</option>
+            <option value="starter">Starter</option>
+            <option value="business">Business</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+        </div>
       </div>
+
+      {/* Erreur */}
+      {error && (
+        <div style={{ background:'rgba(239,100,97,.1)', border:'1px solid #ef6461', borderRadius:8,
+                      padding:'10px 14px', color:'#ef6461', fontSize:13, marginBottom:12 }}>
+          ⚠️ {error}
+        </div>
+      )}
+
       <div style={{ display:'flex', gap:8 }}>
-        <button onClick={handleCreate} disabled={loading} style={S.btnPri}>{loading ? '⏳...' : '✓ Créer'}</button>
+        <button onClick={handleCreate} disabled={loading || !form.country_code} style={{
+          ...S.btnPri, opacity: (!form.country_code || loading) ? 0.6 : 1,
+          cursor: !form.country_code ? 'not-allowed' : 'pointer'
+        }}>
+          {loading ? '⏳ Création...' : '✓ Créer la boutique'}
+        </button>
         <button onClick={onCancel} style={S.btnSec}>Annuler</button>
       </div>
+      {!form.country_code && (
+        <div style={{ fontSize:11, color:'#d4a12e', marginTop:6 }}>
+          ↑ Sélectionnez le pays pour activer la création
+        </div>
+      )}
     </div>
   );
 }
