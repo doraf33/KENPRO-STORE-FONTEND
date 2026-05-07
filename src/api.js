@@ -244,4 +244,21 @@ export const myShopAPI = {
   getUsage:     ()     => api.get('/my-shop/usage'),
 };
 
+// ── PAIEMENTS MULTI-PROVIDER ──
+export const paymentsAPI = {
+  // Config paiements de ma boutique
+  getConfigs:      ()                => api.get('/my-shop/payments'),
+  getAvailable:    ()                => api.get('/my-shop/payments/available'),
+  getAllProviders:  ()                => api.get('/my-shop/payments/all-providers'),
+  configure:       (provider, data)  => api.post(`/my-shop/payments/${provider}`, data),
+  updateConfig:    (provider, data)  => api.put(`/my-shop/payments/${provider}`, data),
+  deleteConfig:    (provider)        => api.delete(`/my-shop/payments/${provider}`),
+  testConfig:      (provider)        => api.post(`/my-shop/payments/${provider}/test`),
+  // Paiements
+  detectPhone:     (phone)           => api.get(`/payments/detect/${encodeURIComponent(phone)}`),
+  activeProviders: ()                => api.get('/payments/providers'),
+  initiate:        (data)            => api.post('/payments/initiate', data),
+  getStatus:       (txId)            => api.get(`/payments/${txId}/status`),
+};
+
 export default api;

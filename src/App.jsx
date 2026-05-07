@@ -8,6 +8,7 @@ import ShopSettings        from './components/ShopSettings';
 import RepairTicketPrinter from './components/RepairTicketPrinter';
 import OnlineStore         from './components/OnlineStore';
 import ProductStorePanel   from './components/ProductStorePanel';
+import PaymentSettings     from './components/PaymentSettings';
 import SyncStatus, { ConnectionDot } from './components/SyncStatus';
 import SuperAdminPanel     from './components/SuperAdminPanel';
 import { TenantProvider }  from './context/TenantContext';
@@ -2296,6 +2297,7 @@ const ADMIN_TABS = [
   { id: 'admin_reports',label: 'Rapports vendeurs',  icon: '📋' },
   { id: 'shop_settings', label: 'Paramètres boutique', icon: '⚙️' },
   { id: 'online_store',  label: 'Boutique en ligne',   icon: '🛒' },
+  { id: 'payment_settings', label: 'Paiements',          icon: '💳' },
   { id: 'super_admin',   label: '🏢 Super Admin',       icon: '🔑', superOnly: true },
 ];
 const VENDOR_TABS = [
@@ -2402,8 +2404,9 @@ function AppShell() {
       case 'modules':          return <ModuleManager />;
       case 'admin_reports':    return <AdminReports />;
       case 'shop_settings':    return <ShopSettings />;
-      case 'online_store':     return <OnlineStore />;
-      case 'super_admin':      return <SuperAdminPanel />;
+      case 'online_store':       return <OnlineStore />;
+      case 'payment_settings':   return <PaymentSettings />;
+      case 'super_admin':        return <SuperAdminPanel />;
       case 'vendor_dashboard': return <VendorDashboard />;
       case 'my_report':        return <VendorReportForm onSubmitted={() => { setTab('my_reports'); showToast('Rapport soumis !', 'Votre rapport journalier a été envoyé.', 'success'); }} />;
       case 'my_reports':       return <MyReports />;
