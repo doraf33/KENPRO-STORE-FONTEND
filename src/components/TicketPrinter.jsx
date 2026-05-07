@@ -131,7 +131,7 @@ export default function TicketPrinter({ invoice, onClose }) {
   // WhatsApp — message texte avec le résumé de la facture
   const handleWhatsApp = () => {
     if (!invoice.client_phone) { alert('Ce client n\'a pas de numéro de téléphone.'); return; }
-    const phone = invoice.client_phone.replace(/\s/g, '').replace(/^\+/, '');
+    const phone = invoice.client_phone.replace(/\D/g, '');
     const items = (invoice.items || []).map(it =>
       `  ${it.product_name} ×${it.quantity} = ${fmt(it.total)}`
     ).join('\n');

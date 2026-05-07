@@ -194,7 +194,7 @@ export default function RepairTicketPrinter({ repair, onClose }) {
 
   const handleWhatsApp = () => {
     if (!repair.client_phone) { alert('Ce client n\'a pas de numéro de téléphone.'); return; }
-    const phone = repair.client_phone.replace(/\s/g, '').replace(/^\+/, '');
+    const phone = repair.client_phone.replace(/\D/g, '');
     const msg = mode === 'exit'
       ? [
           `Bonjour ${repair.client_name || ''},`,

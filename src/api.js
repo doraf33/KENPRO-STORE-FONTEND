@@ -19,11 +19,20 @@ const api = axios.create({
   },
 });
 
-// Intercepteur : ajoute automatiquement le token JWT à chaque requête
+// Intercepteur : ajoute JWT + X-Tenant-Slug (multi-tenant)
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('kenpro_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    // Ajouter X-Tenant-Slug si pas déjà dans le JWT
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (!payload.tenant_id && !payload.is_super_admin) {
+        // Fallback : utilise le slug stocké en localStorage
+        const slug = localStorage.getItem('kenpro_tenant_slug') || 'kenpro-store';
+        config.headers['X-Tenant-Slug'] = slug;
+      }
+    } catch { /* token invalide */ }
   }
   return config;
 });
@@ -207,6 +216,32 @@ export const publicStoreAPI = {
   getOrders:        (params)      => api.get('/store/admin/orders', { params }),
   getOrder:         (id)          => api.get(`/store/admin/orders/${id}`),
   updateOrderStatus:(id, data)    => api.put(`/store/admin/orders/${id}/status`, data),
+};
+
+// ── SUPER ADMIN (multi-tenant) ──
+export const superAdminAPI = {
+  getTenants:      (params)   => api.get('/super-admin/tenants', { params }),
+  getTenant:       (id)       => api.get(`/super-admin/tenants/${id}`),
+  createTenant:    (data)     => api.post('/super-admin/tenants', data),
+  updateTenant:    (id, data) => api.put(`/super-admin/tenants/${id}`, data),
+  suspendTenant:   (id)       => api.put(`/super-admin/tenants/${id}/suspend`),
+  activateTenant:  (id)       => api.put(`/super-admin/tenants/${id}/activate`),
+  deleteTenant:    (id)       => api.delete(`/super-admin/tenants/${id}`),
+  getStats:        ()         => api.get('/super-admin/stats'),
+  impersonate:     (id)       => api.post(`/super-admin/impersonate/${id}`),
+};
+
+// ── MA BOUTIQUE ──
+export const myShopAPI = {
+  get:          ()     => api.get('/my-shop'),
+  update:       (data) => api.put('/my-shop', data),
+  updateBranding:(data)=> api.put('/my-shop/branding', data),
+  uploadLogo:   (file) => {
+    const fd = new FormData(); fd.append('file', file);
+    return api.post('/my-shop/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+  getStats:     ()     => api.get('/my-shop/stats'),
+  getUsage:     ()     => api.get('/my-shop/usage'),
 };
 
 export default api;

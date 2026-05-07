@@ -972,7 +972,7 @@ function Invoices() {
 
   const sendWhatsApp = (inv) => {
     if (!inv.client_phone) { alert('Ce client n\'a pas de numero de telephone'); return; }
-    const phone = inv.client_phone.replace(/\s/g, '').replace(/^\+/, '');
+    const phone = inv.client_phone.replace(/\D/g, '');
     const msg = `Bonjour ${inv.client_name},\nVoici votre ${inv.invoice_type} N°${inv.number} de KENPRO STORE.\nMontant: ${fmt(inv.total)}\nMerci pour votre confiance !`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
@@ -1163,7 +1163,7 @@ function Repairs() {
       // Notification WhatsApp automatique si le client a un numéro
       if (r.client_phone && WA_MESSAGES[newStatus]) {
         const msg = WA_MESSAGES[newStatus](r);
-        const phone = r.client_phone.replace(/\s/g, '').replace(/^\+/, '');
+        const phone = r.client_phone.replace(/\D/g, '');
         showToast(
           '📱 WhatsApp prêt',
           `Statut → ${STATUS_LABELS[newStatus]} — cliquez pour envoyer`,
@@ -1238,7 +1238,7 @@ function Repairs() {
             <button className="btn-small btn-secondary" onClick={() => setTicketRepair(r)} title="Ticket thermique 58mm">🎫 Ticket</button>
             {r.client_phone && WA_MESSAGES[r.status] && (
               <button className="btn-small btn-secondary" style={{ background:'#1c3b2a', color:'#2dd4a0', border:'1px solid #2dd4a0' }}
-                onClick={() => { const phone=r.client_phone.replace(/\s/g,'').replace(/^\+/,''); window.open(`https://wa.me/${phone}?text=${encodeURIComponent(WA_MESSAGES[r.status]?.(r)||'')}`, '_blank'); }}>
+                onClick={() => { const phone=r.client_phone.replace(/\D/g,''); window.open(`https://wa.me/${phone}?text=${encodeURIComponent(WA_MESSAGES[r.status]?.(r)||'')}`, '_blank'); }}>
                 📱 WhatsApp
               </button>
             )}
