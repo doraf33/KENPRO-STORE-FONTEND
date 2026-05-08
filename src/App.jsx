@@ -2287,20 +2287,20 @@ function AdminReports() {
 // APP PRINCIPAL
 // ============================================================
 const ADMIN_TABS = [
-  { id: 'dashboard',    label: 'Tableau de bord',   icon: '📊' },
-  { id: 'products',     label: 'Produits',           icon: '📦' },
-  { id: 'clients',      label: 'Clients',            icon: '👥' },
-  { id: 'invoices',     label: 'Factures / Devis',   icon: '🧾' },
-  { id: 'repairs',      label: 'Réparations',        icon: '🔧' },
-  { id: 'suppliers',    label: 'Fournisseurs',       icon: '🚚' },
-  { id: 'journals',     label: 'Journaux',           icon: '📒' },
-  { id: 'modules',      label: 'Modules',            icon: '🔩' },
-  { id: 'admin_reports',label: 'Rapports vendeurs',  icon: '📋' },
-  { id: 'shop_settings', label: 'Paramètres boutique', icon: '⚙️' },
-  { id: 'online_store',  label: 'Boutique en ligne',   icon: '🛒' },
-  { id: 'payment_settings', label: 'Paiements',          icon: '💳' },
-  { id: 'billing',          label: 'Abonnement',         icon: '💰' },
-  { id: 'super_admin',   label: '🏢 Super Admin',       icon: '🔑', superOnly: true },
+  { id: 'dashboard',        label: 'Tableau de bord',     icon: '📊' },
+  { id: 'products',         label: 'Produits',             icon: '📦' },
+  { id: 'clients',          label: 'Clients',              icon: '👥' },
+  { id: 'invoices',         label: 'Factures / Devis',     icon: '🧾' },
+  { id: 'repairs',          label: 'Réparations',          icon: '🔧' },
+  { id: 'suppliers',        label: 'Fournisseurs',         icon: '🚚' },
+  { id: 'journals',         label: 'Journaux',             icon: '📒' },
+  { id: 'modules',          label: 'Modules',              icon: '🔩' },
+  { id: 'admin_reports',    label: 'Rapports vendeurs',    icon: '📋' },
+  { id: 'shop_settings',    label: 'Paramètres boutique',  icon: '⚙️' },
+  { id: 'online_store',     label: 'Boutique en ligne',    icon: '🛒' },
+  { id: 'payment_settings', label: 'Paiements',            icon: '💳' },
+  { id: 'billing',          label: 'Abonnement',           icon: '💰', highlight: true },
+  { id: 'super_admin',      label: 'Super Admin',          icon: '🏢', superOnly: true },
 ];
 const VENDOR_TABS = [
   { id: 'vendor_dashboard', label: 'Mon tableau de bord', icon: '🏠' },
@@ -2437,7 +2437,7 @@ function AppShell() {
         <nav>
           {TABS.map(t => (
             <button key={t.id}
-              className={`nav-btn ${tab === t.id ? 'active' : ''}`}
+              className={`nav-btn ${tab === t.id ? 'active' : ''}${t.highlight ? ' nav-btn-highlight' : ''}`}
               onClick={() => { setTab(t.id); setSidebarOpen(false); }}>
               <span className="nav-icon">{t.icon}</span> {t.label}
             </button>

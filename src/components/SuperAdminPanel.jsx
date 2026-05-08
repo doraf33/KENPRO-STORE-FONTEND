@@ -329,6 +329,151 @@ function PlatformDashboard({ dashboard }) {
 }
 
 
+// ── Billing plateforme (super admin) ─────────────────────────
+const PLAN_PRICES = { free: 0, starter: 5000, business: 15000, enterprise: 50000 };
+
+function PlatformBilling({ dashboard, tenants }) {
+  const fmt = n => Number(n || 0).toLocaleString('fr-FR');
+  const [renewalResult, setRenewalResult] = useState(null);
+  const [renewalLoading, setRenewalLoading] = useState(false);
+
+  if (!dashboard) return <div style={{ color:'#7a8094' }}>Chargement…</div>;
+
+  const { kpis, plan_distribution, top_tenants } = dashboard;
+
+  // MRR calculé depuis la distribution des plans
+  const mrr = (plan_distribution || []).reduce((acc, p) => {
+    return acc + (PLAN_PRICES[p.plan] || 0) * p.count;
+  }, 0);
+  const arr = mrr * 12;
+
+  // Abonnements payants
+  const payingCount = (plan_distribution || [])
+    .filter(p => p.plan !== 'free')
+    .reduce((acc, p) => acc + p.count, 0);
+  const freeCount = (plan_distribution || [])
+    .find(p => p.plan === 'free')?.count || 0;
+
+  const handleCheckRenewal = async () => {
+    setRenewalLoading(true);
+    try {
+      const r = await fetch('/api/subscriptions/admin/check-renewal', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('kenpro_token')}` },
+      });
+      const data = await r.json();
+      setRenewalResult(data);
+    } catch {
+      setRenewalResult({ error: 'Erreur lors de la vérification' });
+    } finally {
+      setRenewalLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      {/* KPIs Billing */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:10, marginBottom:14 }}>
+        {[
+          { label: 'MRR (FCFA/mois)',     value: fmt(mrr),         color: '#d4a12e', icon: '💰' },
+          { label: 'ARR (FCFA/an)',        value: fmt(arr),         color: '#d4a12e', icon: '📅' },
+          { label: 'Abonnements payants',  value: payingCount,      color: '#2dd4a0', icon: '✅' },
+          { label: 'Plan gratuit',         value: freeCount,        color: '#7a8094', icon: '🆓' },
+          { label: 'Total boutiques',      value: kpis?.tenants?.total || 0, color: '#5b9cf6', icon: '🏪' },
+          { label: 'Taux conversion',
+            value: kpis?.tenants?.total ? `${Math.round(payingCount / kpis.tenants.total * 100)}%` : '0%',
+            color: '#f0923c', icon: '📈' },
+        ].map(k => (
+          <div key={k.label} style={{ background:'#1b1f30', border:'1px solid #252a3a', borderRadius:10, padding:'10px 14px' }}>
+            <div style={{ fontSize:10, color:'#7a8094', marginBottom:2 }}>{k.icon} {k.label}</div>
+            <div style={{ fontSize:20, fontWeight:700, color:k.color }}>{k.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
+        {/* Revenus par plan */}
+        <div style={S.card}>
+          <div style={{ fontWeight:700, color:'#eaedf3', marginBottom:12 }}>📦 Revenus par plan</div>
+          {(plan_distribution || []).map(p => {
+            const planMrr = (PLAN_PRICES[p.plan] || 0) * p.count;
+            const pct     = mrr > 0 ? Math.round(planMrr / mrr * 100) : 0;
+            return (
+              <div key={p.plan} style={{ marginBottom:10 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:4 }}>
+                  <span style={{ color: PLAN_COLORS[p.plan] || '#7a8094', fontWeight:700 }}>
+                    {p.plan.charAt(0).toUpperCase() + p.plan.slice(1)}
+                    <span style={{ color:'#7a8094', fontWeight:400, marginLeft:6 }}>× {p.count}</span>
+                  </span>
+                  <span style={{ color:'#d4a12e', fontWeight:700 }}>{fmt(planMrr)} FCFA</span>
+                </div>
+                <div style={{ height:4, background:'#252a3a', borderRadius:4, overflow:'hidden' }}>
+                  <div style={{ height:'100%', width:`${pct}%`, background: PLAN_COLORS[p.plan] || '#7a8094',
+                                borderRadius:4, transition:'width .4s' }} />
+                </div>
+                <div style={{ fontSize:10, color:'#7a8094', marginTop:2 }}>{pct}% du MRR</div>
+              </div>
+            );
+          })}
+          {(!plan_distribution || plan_distribution.length === 0) && (
+            <div style={{ color:'#7a8094', fontSize:13 }}>Aucun abonnement</div>
+          )}
+        </div>
+
+        {/* Top boutiques payantes */}
+        <div style={S.card}>
+          <div style={{ fontWeight:700, color:'#eaedf3', marginBottom:10 }}>🏆 Top boutiques par CA</div>
+          {(top_tenants || []).slice(0, 6).map((t, i) => (
+            <div key={t.id} style={{ display:'flex', justifyContent:'space-between',
+                                      padding:'5px 0', borderBottom:'1px solid #1b1f30', fontSize:12 }}>
+              <div>
+                <span style={{ color: i < 3 ? '#d4a12e' : '#eaedf3' }}>
+                  {['🥇','🥈','🥉'][i] || `${i+1}.`} {t.name.slice(0, 18)}
+                </span>
+                <span style={{ marginLeft:6, fontSize:10, padding:'1px 6px', borderRadius:10,
+                               background:(PLAN_COLORS[t.plan]||'#7a8094')+'22',
+                               color:PLAN_COLORS[t.plan]||'#7a8094' }}>
+                  {t.plan || 'free'}
+                </span>
+              </div>
+              <span style={{ color:'#d4a12e', fontWeight:700 }}>{fmt(t.revenue)}</span>
+            </div>
+          ))}
+          {(!top_tenants || top_tenants.length === 0) && (
+            <div style={{ color:'#7a8094', fontSize:13 }}>Aucune donnée</div>
+          )}
+        </div>
+      </div>
+
+      {/* Actions maintenance */}
+      <div style={S.card}>
+        <div style={{ fontWeight:700, color:'#eaedf3', marginBottom:12 }}>🔧 Maintenance abonnements</div>
+        <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
+          <button style={{ ...S.btnPri, opacity: renewalLoading ? 0.6 : 1 }}
+                  onClick={handleCheckRenewal} disabled={renewalLoading}>
+            {renewalLoading ? '⏳ Vérification…' : '🔄 Vérifier renouvellements'}
+          </button>
+          <span style={{ fontSize:12, color:'#7a8094' }}>
+            Vérifie les expirations et suspend les abonnements en retard de +7 jours
+          </span>
+        </div>
+        {renewalResult && (
+          <div style={{ marginTop:12, padding:'10px 14px', background:'#1b1f30', borderRadius:8, fontSize:13 }}>
+            {renewalResult.error ? (
+              <span style={{ color:'#ef6461' }}>{renewalResult.error}</span>
+            ) : (
+              <span style={{ color:'#2dd4a0' }}>
+                ✅ {renewalResult.expiring_soon ?? 0} expirant bientôt · {renewalResult.suspended ?? 0} suspendus · {renewalResult.downgraded ?? 0} rétrogradés
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 export default function SuperAdminPanel() {
   const [tenants,      setTenants]     = useState([]);
   const [stats,        setStats]       = useState(null);
@@ -397,7 +542,7 @@ export default function SuperAdminPanel() {
         </div>
       </div>
 
-      {/* Onglets Dashboard / Boutiques */}
+      {/* Onglets Dashboard / Boutiques / Billing */}
       <div className="filter-bar" style={{ marginBottom:16 }}>
         <button className={`btn-filter ${activeTab==='dashboard'?'active':''}`} onClick={() => setActiveTab('dashboard')}>
           📊 Dashboard plateforme
@@ -405,11 +550,18 @@ export default function SuperAdminPanel() {
         <button className={`btn-filter ${activeTab==='boutiques'?'active':''}`} onClick={() => setActiveTab('boutiques')}>
           🏪 Gestion boutiques ({tenants.length})
         </button>
+        <button className={`btn-filter ${activeTab==='billing'?'active':''}`}
+                onClick={() => setActiveTab('billing')}
+                style={activeTab==='billing' ? {} : { color:'#d4a12e', borderColor:'rgba(212,161,46,.3)' }}>
+          💰 Billing
+        </button>
       </div>
 
       {activeTab === 'dashboard' && <PlatformDashboard dashboard={dashboard} />}
 
       {activeTab === 'boutiques' && <GlobalStats stats={stats} />}
+
+      {activeTab === 'billing' && <PlatformBilling dashboard={dashboard} tenants={tenants} />}
 
       {showCreate && (
         <CreateTenantForm
