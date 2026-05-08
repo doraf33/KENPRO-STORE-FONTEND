@@ -275,4 +275,16 @@ export const paymentsAPI = {
   getStatus:       (txId)            => api.get(`/payments/${txId}/status`),
 };
 
+// ── ABONNEMENTS & FACTURATION ──
+export const subscriptionsAPI = {
+  getPlans:       ()     => api.get('/subscriptions/plans'),
+  getMyPlan:      ()     => api.get('/subscriptions/me'),
+  initiate:       (data) => api.post('/subscriptions/initiate', data),
+  confirmPayment: (data) => api.post('/subscriptions/confirm-payment', data),
+  upgrade:        (data) => api.post('/subscriptions/upgrade', data),
+  downgrade:      ()     => api.post('/subscriptions/downgrade'),
+  cancel:         ()     => api.post('/subscriptions/cancel'),
+  getPayments:    ()     => api.get('/subscriptions/payments'),
+};
+
 export default api;

@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext, createContext, useRef, useCallback } from 'react';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { authAPI, productsAPI, clientsAPI, invoicesAPI, repairsAPI, suppliersAPI, creditsAPI, creditPaymentsAPI, dashboardAPI, modulesAPI, vendorAPI, adminReportsAPI, notificationsAPI, settingsAPI, ticketsAPI, publicStoreAPI, superAdminAPI, myShopAPI } from './api';
+import { authAPI, productsAPI, clientsAPI, invoicesAPI, repairsAPI, suppliersAPI, creditsAPI, creditPaymentsAPI, dashboardAPI, modulesAPI, vendorAPI, adminReportsAPI, notificationsAPI, settingsAPI, ticketsAPI, publicStoreAPI, superAdminAPI, myShopAPI, subscriptionsAPI } from './api';
 import { BarcodeScanner, BarcodeDisplay } from './BarcodeScanner';
 import LabelPrinter        from './components/LabelPrinter';
 import TicketPrinter       from './components/TicketPrinter';
@@ -11,6 +11,7 @@ import ProductStorePanel   from './components/ProductStorePanel';
 import PaymentSettings     from './components/PaymentSettings';
 import SyncStatus, { ConnectionDot } from './components/SyncStatus';
 import SuperAdminPanel     from './components/SuperAdminPanel';
+import BillingPanel        from './components/BillingPanel';
 import { TenantProvider }  from './context/TenantContext';
 import './App.css';
 
@@ -2298,6 +2299,7 @@ const ADMIN_TABS = [
   { id: 'shop_settings', label: 'Paramètres boutique', icon: '⚙️' },
   { id: 'online_store',  label: 'Boutique en ligne',   icon: '🛒' },
   { id: 'payment_settings', label: 'Paiements',          icon: '💳' },
+  { id: 'billing',          label: 'Abonnement',         icon: '💰' },
   { id: 'super_admin',   label: '🏢 Super Admin',       icon: '🔑', superOnly: true },
 ];
 const VENDOR_TABS = [
@@ -2406,6 +2408,7 @@ function AppShell() {
       case 'shop_settings':    return <ShopSettings />;
       case 'online_store':       return <OnlineStore />;
       case 'payment_settings':   return <PaymentSettings />;
+      case 'billing':            return <BillingPanel />;
       case 'super_admin':        return <SuperAdminPanel />;
       case 'vendor_dashboard': return <VendorDashboard />;
       case 'my_report':        return <VendorReportForm onSubmitted={() => { setTab('my_reports'); showToast('Rapport soumis !', 'Votre rapport journalier a été envoyé.', 'success'); }} />;
