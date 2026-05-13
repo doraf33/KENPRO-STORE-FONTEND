@@ -287,4 +287,28 @@ export const subscriptionsAPI = {
   getPayments:    ()     => api.get('/subscriptions/payments'),
 };
 
+// ── ESCROW & FLUX PAIEMENT ──
+export const escrowAPI = {
+  getMyEscrows:   (params) => api.get('/my-shop/escrow', { params }),
+  markDelivered:  (id)     => api.post(`/my-shop/escrow/${id}/deliver`),
+  getMyRevenue:   ()       => api.get('/my-shop/revenue'),
+  getMyPayouts:   (params) => api.get('/my-shop/payouts', { params }),
+  createEscrow:   (data)   => api.post('/my-shop/escrow/create', data),
+  // Super Admin
+  getAllEscrows:   (params) => api.get('/super-admin/escrow', { params }),
+  getWallet:      ()       => api.get('/super-admin/wallet'),
+  getCommissions: ()       => api.get('/super-admin/commissions'),
+  releaseEscrow:  (id)     => api.post(`/super-admin/escrow/${id}/release`),
+  autoConfirm:    ()       => api.post('/super-admin/escrow/auto-confirm'),
+  // Utils
+  previewCommission: (amount, rate) => api.get('/escrow/commission-preview', { params: { amount, rate } }),
+};
+
+// ── AUDIT & SÉCURITÉ ──
+export const auditAPI = {
+  getSecurity:    ()       => api.get('/super-admin/security'),
+  getLogs:        (params) => api.get('/super-admin/audit-logs', { params }),
+  getMyLogs:      ()       => api.get('/my-shop/audit-logs'),
+};
+
 export default api;

@@ -12,6 +12,8 @@ import PaymentSettings     from './components/PaymentSettings';
 import SyncStatus, { ConnectionDot } from './components/SyncStatus';
 import SuperAdminPanel     from './components/SuperAdminPanel';
 import BillingPanel        from './components/BillingPanel';
+import RevenuePanel        from './components/RevenuePanel';
+import SecurityPanel       from './components/SecurityPanel';
 import { TenantProvider }  from './context/TenantContext';
 import './App.css';
 
@@ -2299,8 +2301,10 @@ const ADMIN_TABS = [
   { id: 'shop_settings',    label: 'Paramètres boutique',  icon: '⚙️' },
   { id: 'online_store',     label: 'Boutique en ligne',    icon: '🛒' },
   { id: 'payment_settings', label: 'Paiements',            icon: '💳' },
-  { id: 'billing',          label: 'Abonnement',           icon: '💰', highlight: true },
+  { id: 'revenue',          label: 'Mes Revenus',          icon: '💰', highlight: true },
+  { id: 'billing',          label: 'Abonnement',           icon: '📋' },
   { id: 'super_admin',      label: 'Super Admin',          icon: '🏢', superOnly: true },
+  { id: 'security',         label: 'Sécurité',             icon: '🔐', superOnly: true },
 ];
 const VENDOR_TABS = [
   { id: 'vendor_dashboard', label: 'Mon tableau de bord', icon: '🏠' },
@@ -2409,7 +2413,9 @@ function AppShell() {
       case 'online_store':       return <OnlineStore />;
       case 'payment_settings':   return <PaymentSettings />;
       case 'billing':            return <BillingPanel />;
+      case 'revenue':            return <RevenuePanel token={localStorage.getItem('kenpro_token')} />;
       case 'super_admin':        return <SuperAdminPanel />;
+      case 'security':           return <SecurityPanel token={localStorage.getItem('kenpro_token')} />;
       case 'vendor_dashboard': return <VendorDashboard />;
       case 'my_report':        return <VendorReportForm onSubmitted={() => { setTab('my_reports'); showToast('Rapport soumis !', 'Votre rapport journalier a été envoyé.', 'success'); }} />;
       case 'my_reports':       return <MyReports />;

@@ -987,3 +987,226 @@ tr:hover { background: rgba(255,255,255,.02); }
 [data-theme="light"] .btn-secondary { border-color: #e2e8f0; color: #334155; }
 [data-theme="light"] .btn-secondary:hover { background: #f1f5f9; }
 [data-theme="light"] .alert-banner { background: rgba(239,100,97,.07); }
+
+/* ============================================================
+   PHASE 5 — DESIGN FINTECH PREMIUM
+   Glassmorphism + Skeleton + Animations + Status badges
+   ============================================================ */
+
+/* ── Animations fintech ─────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .5; transform: scale(1.5); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes badge-pop {
+  0%   { transform: scale(0.8); opacity: 0; }
+  70%  { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 161, 46, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(212, 161, 46, .15); }
+}
+
+/* ── Glassmorphism cards ────────────────────────────────────── */
+.glass-card {
+  background: linear-gradient(135deg,
+    rgba(255,255,255,.06) 0%,
+    rgba(255,255,255,.02) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.06);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.glass-card-gold {
+  background: linear-gradient(135deg,
+    rgba(212,161,46,.12) 0%,
+    rgba(212,161,46,.04) 100%);
+  border-color: rgba(212,161,46,.2);
+  box-shadow: 0 8px 32px rgba(212,161,46,.08);
+}
+
+/* Applique le glassmorphism subtil aux .form-card existants */
+.form-card {
+  background: linear-gradient(135deg, var(--card2) 0%, var(--card) 100%) !important;
+  border-color: var(--border) !important;
+  transition: transform .2s, box-shadow .2s !important;
+  position: relative;
+  overflow: hidden;
+}
+.form-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+  pointer-events: none;
+}
+.form-card:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,.2) !important;
+}
+
+/* ── Skeleton loading ────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--card2) 25%,
+    rgba(255,255,255,.04) 50%,
+    var(--card2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite ease-in-out;
+  border-radius: 8px;
+  border: none !important;
+}
+.skeleton-text  { height: 14px; margin-bottom: 8px; border-radius: 4px; }
+.skeleton-title { height: 22px; width: 60%; margin-bottom: 12px; border-radius: 6px; }
+.skeleton-card  {
+  height: 120px; border-radius: 12px;
+  background: linear-gradient(90deg, var(--card2) 25%, rgba(255,255,255,.04) 50%, var(--card2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite ease-in-out;
+}
+.skeleton-row   { height: 44px; border-radius: 6px; margin-bottom: 6px; }
+
+/* ── Status badges animés ────────────────────────────────────── */
+.status-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot.active   { background: var(--green); animation: pulse-dot 2s infinite; }
+.status-dot.pending  { background: var(--orange); animation: pulse-dot 2s infinite .5s; }
+.status-dot.error    { background: var(--red); animation: pulse-dot 1.2s infinite; }
+.status-dot.inactive { background: var(--muted); }
+
+.badge-animated { animation: badge-pop .3s cubic-bezier(.34,1.56,.64,1) forwards; }
+
+/* Status escrow colorés */
+.escrow-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  animation: badge-pop .25s ease forwards;
+}
+.escrow-status.paid       { background: rgba(91,156,246,.15); color: #5b9cf6; }
+.escrow-status.delivered  { background: rgba(240,146,60,.15); color: #f0923c; }
+.escrow-status.confirmed  { background: rgba(45,212,160,.15); color: #2dd4a0; }
+.escrow-status.vendor_paid{ background: rgba(212,161,46,.15); color: #d4a12e; }
+.escrow-status.pending    { background: rgba(122,128,148,.15); color: #7a8094; }
+.escrow-status.disputed   { background: rgba(239,100,97,.15);  color: #ef6461; }
+
+/* ── KPI cards fintech ───────────────────────────────────────── */
+.kpi-fintech {
+  display: flex; flex-direction: column;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, var(--card2) 0%, var(--card) 100%);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  position: relative; overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+  animation: count-up .4s ease forwards;
+}
+.kpi-fintech::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle at 100% 0%, var(--kpi-color, var(--accent)) 0%, transparent 70%);
+  opacity: .08;
+  pointer-events: none;
+}
+.kpi-fintech:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+.kpi-fintech .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+.kpi-fintech .kpi-value { font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; }
+.kpi-fintech .kpi-trend { font-size: 11px; margin-top: 6px; }
+.kpi-fintech .kpi-trend.up   { color: var(--green); }
+.kpi-fintech .kpi-trend.down { color: var(--red); }
+
+/* ── Transaction feed ────────────────────────────────────────── */
+.tx-feed { display: flex; flex-direction: column; gap: 1px; }
+.tx-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 8px;
+  transition: background .15s;
+  animation: slide-in-left .3s ease forwards;
+}
+.tx-item:hover { background: rgba(255,255,255,.03); }
+.tx-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.tx-icon.success { background: rgba(45,212,160,.15); }
+.tx-icon.pending { background: rgba(240,146,60,.15); }
+.tx-icon.failed  { background: rgba(239,100,97,.15); }
+.tx-icon.payout  { background: rgba(212,161,46,.15); }
+.tx-body  { flex: 1; min-width: 0; }
+.tx-title { font-size: 13px; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-sub   { font-size: 11px; color: var(--muted); }
+.tx-amount { font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.tx-amount.positive { color: var(--green); }
+.tx-amount.negative { color: var(--red); }
+.tx-amount.neutral  { color: var(--orange); }
+.tx-amount.gold     { color: var(--accent); }
+
+/* ── Provider health cards ───────────────────────────────────── */
+.provider-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  transition: border-color .2s, transform .2s;
+}
+.provider-card:hover { border-color: rgba(255,255,255,.12); transform: translateY(-1px); }
+.provider-logo { width: 40px; height: 40px; border-radius: 10px; object-fit: contain; background: #fff; padding: 4px; flex-shrink: 0; }
+.provider-logo-placeholder { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.provider-info { flex: 1; min-width: 0; }
+.provider-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.provider-meta { font-size: 11px; color: var(--muted); }
+.provider-status { display: flex; align-items: center; gap: 5px; font-size: 11px; margin-top: 3px; }
+.health-bar { height: 3px; background: var(--border); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+.health-bar-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+
+/* ── Glow sur le wallet super admin ─────────────────────────── */
+.wallet-card {
+  animation: glow-pulse 3s infinite;
+  border-color: rgba(212,161,46,.3) !important;
+}
+
+/* ── Séparateur avec icône centré ────────────────────────────── */
+.flow-step {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  position: relative;
+}
+.flow-step .step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(212,161,46,.15); color: var(--accent);
+  font-size: 11px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.flow-step.done { border-color: rgba(45,212,160,.3); }
+.flow-step.done .step-num { background: rgba(45,212,160,.15); color: var(--green); }
+.flow-step.active { border-color: rgba(212,161,46,.4); animation: glow-pulse 2s infinite; }
+
+/* ── Responsive fixes ────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .kpi-fintech .kpi-value { font-size: 20px; }
+  .tx-amount { display: none; }
+}
