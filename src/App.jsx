@@ -622,6 +622,7 @@ function Products() {
 
   // Scan → recherche produit par code-barres
   const handleBarcodeDetected = async (code) => {
+    // caméra déjà libérée par BarcodeScanner avant cet appel
     setShowScanner(false);
     try {
       const res = await productsAPI.getByBarcode(code);
@@ -629,7 +630,10 @@ function Products() {
       showToast('Produit trouvé', res.data.product.name, 'success');
     } catch {
       setScanResult({ found: false, code });
-      showToast('Code-barres inconnu', code, 'warning');
+      // Pré-remplir le code dans le formulaire et ouvrir pour ajouter le produit
+      setForm(f => ({ ...f, barcode: code }));
+      setShowForm(true);
+      showToast('Code inconnu', `Ajoutez ce produit (code: ${code})`, 'warning');
     }
   };
 
@@ -779,7 +783,7 @@ function Clients() {
       if (editId) { await clientsAPI.update(editId, form); }
       else { await clientsAPI.create(form); }
       resetForm(); load();
-    } catch (err) { alert(err.response?.data?.error || 'Erreur'); }
+    } catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
   const handleEdit = (c) => {
@@ -790,7 +794,7 @@ function Clients() {
 
   const handleDelete = async (id) => {
     if (!confirm('Supprimer ?')) return;
-    try { await clientsAPI.delete(id); load(); } catch (err) { alert(err.response?.data?.error || 'Erreur'); }
+    try { await clientsAPI.delete(id); load(); } catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
   if (loading) return <div className="loading">Chargement...</div>;
@@ -924,7 +928,7 @@ function Invoices() {
       });
       setForm({ client_id: '', invoice_type: 'facture', status: 'en_attente', items: [{ product_id: '', quantity: 1, price: '' }], notes: '' });
       setShowForm(false); load();
-    } catch (err) { alert(err.response?.data?.error || 'Erreur'); }
+    } catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
   const handlePay = async (id) => {
@@ -938,12 +942,12 @@ function Invoices() {
   };
 
   const handleConvert = async (id) => {
-    try { await invoicesAPI.convert(id); load(); } catch (err) { alert(err.response?.data?.error || 'Erreur'); }
+    try { await invoicesAPI.convert(id); load(); } catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
   const handleDelete = async (id) => {
     if (!confirm('Supprimer ?')) return;
-    try { await invoicesAPI.delete(id); load(); } catch (err) { alert(err.response?.data?.error || 'Erreur'); }
+    try { await invoicesAPI.delete(id); load(); } catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
   const printInvoice = (inv) => {
@@ -1154,7 +1158,7 @@ function Repairs() {
       // Ouvrir le ticket de réception automatiquement après création
       setTicketRepair(res.data.repair);
       showToast('Ticket créé', res.data.repair.ticket + ' — Imprimez le ticket de réception', 'success');
-    } catch (err) { alert(err.response?.data?.detail || err.response?.data?.error || 'Erreur'); }
+    } catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
   const nextStatus = async (r) => {
@@ -1178,7 +1182,7 @@ function Repairs() {
           window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
         }
       }
-    } catch (err) { alert(err.response?.data?.detail || err.response?.data?.error || 'Erreur'); }
+    } catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
   if (loading) return <div className="loading">Chargement...</div>;
@@ -1280,19 +1284,19 @@ function Suppliers() {
   const handleCreate = async () => {
     if (!form.name) return;
     try { await suppliersAPI.create(form); setForm({ name: '', phone: '', email: '', city: '' }); setShowForm(false); load(); }
-    catch (err) { alert(err.response?.data?.error || 'Erreur'); }
+    catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
   const handleCredit = async () => {
     if (!creditForm.supplier_id || !creditForm.amount || !creditForm.description) return;
     try { await creditsAPI.create({ ...creditForm, amount: Number(creditForm.amount), supplier_id: Number(creditForm.supplier_id) }); setCreditForm({ supplier_id: '', description: '', amount: '' }); setShowCredit(false); load(); }
-    catch (err) { alert(err.response?.data?.error || 'Erreur'); }
+    catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
   const handlePayment = async () => {
     if (!paymentForm.supplier_id || !paymentForm.amount) return;
     try { await creditPaymentsAPI.create({ ...paymentForm, amount: Number(paymentForm.amount), supplier_id: Number(paymentForm.supplier_id) }); setPaymentForm({ supplier_id: '', amount: '', description: '' }); setShowPayment(false); load(); }
-    catch (err) { alert(err.response?.data?.error || 'Erreur'); }
+    catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
   if (loading) return <div className="loading">Chargement...</div>;
@@ -1767,7 +1771,7 @@ function ModuleManager() {
       if (editMod) await modulesAPI.update(editMod.id, data);
       else await modulesAPI.create(data);
       setShowForm(false); setEditMod(null); load();
-    } catch (e) { alert(e.response?.data?.error || 'Erreur'); }
+    } catch (e) { alert(e?.response?.data?.detail || e?.response?.data?.error || 'Erreur'); }
   };
 
   const handleDelete = async (id) => {
@@ -1779,7 +1783,7 @@ function ModuleManager() {
     try {
       await modulesAPI.assign(assignMod.id, { user_id: Number(userId), daily_target: Number(target) });
       setAssignMod(null); load(); alert('Module assigné avec succès !');
-    } catch (e) { alert(e.response?.data?.error || 'Erreur'); }
+    } catch (e) { alert(e?.response?.data?.detail || e?.response?.data?.error || 'Erreur'); }
   };
 
   const handleUnassign = async (mid, uid, uname) => {
@@ -2028,7 +2032,7 @@ function VendorReportForm({ onSubmitted }) {
       await vendorAPI.submitReport(payload);
       if (onSubmitted) onSubmitted();
       setSubmitted({ submitted: true, total, status: 'soumis' });
-    } catch (e) { alert(e.response?.data?.error || 'Erreur lors de la soumission'); }
+    } catch (e) { alert(e?.response?.data?.detail || e?.response?.data?.error || 'Erreur lors de la soumission'); }
     setLoading(false);
   };
 
@@ -2139,7 +2143,7 @@ function AdminReports() {
     try {
       await adminReportsAPI.review(rid, { status, comment });
       setSelected(null); setComment(''); load();
-    } catch (e) { alert(e.response?.data?.error || 'Erreur'); }
+    } catch (e) { alert(e?.response?.data?.detail || e?.response?.data?.error || 'Erreur'); }
   };
 
   const exportCsv = async () => {
