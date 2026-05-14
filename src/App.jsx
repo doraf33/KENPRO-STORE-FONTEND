@@ -14,6 +14,7 @@ import SuperAdminPanel     from './components/SuperAdminPanel';
 import BillingPanel        from './components/BillingPanel';
 import RevenuePanel        from './components/RevenuePanel';
 import SecurityPanel       from './components/SecurityPanel';
+import CompliancePanel, { MyDataPanel } from './components/CompliancePanel';
 import { TenantProvider }  from './context/TenantContext';
 import './App.css';
 
@@ -2309,6 +2310,7 @@ const ADMIN_TABS = [
   { id: 'billing',          label: 'Abonnement',           icon: '📋' },
   { id: 'super_admin',      label: 'Super Admin',          icon: '🏢', superOnly: true },
   { id: 'security',         label: 'Sécurité',             icon: '🔐', superOnly: true },
+  { id: 'compliance',       label: 'RGPD & 2FA',           icon: '🛡️' },
 ];
 const VENDOR_TABS = [
   { id: 'vendor_dashboard', label: 'Mon tableau de bord', icon: '🏠' },
@@ -2420,6 +2422,7 @@ function AppShell() {
       case 'revenue':            return <RevenuePanel token={localStorage.getItem('kenpro_token')} />;
       case 'super_admin':        return <SuperAdminPanel />;
       case 'security':           return <SecurityPanel token={localStorage.getItem('kenpro_token')} />;
+      case 'compliance':         return <CompliancePanel isSuperAdmin={isSuperAdmin} />;
       case 'vendor_dashboard': return <VendorDashboard />;
       case 'my_report':        return <VendorReportForm onSubmitted={() => { setTab('my_reports'); showToast('Rapport soumis !', 'Votre rapport journalier a été envoyé.', 'success'); }} />;
       case 'my_reports':       return <MyReports />;
