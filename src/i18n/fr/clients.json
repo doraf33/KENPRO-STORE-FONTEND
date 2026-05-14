@@ -1,0 +1,19 @@
+{
+  "title": "Clients",
+  "new_client": "Nouveau client",
+  "client_name": "Nom du client",
+  "phone2": "Téléphone 2",
+  "add_client": "Ajouter un client",
+  "edit_client": "Modifier le client",
+  "delete_confirm": "Supprimer ce client ?",
+  "search_placeholder": "Rechercher un client...",
+  "no_clients": "Aucun client enregistré",
+  "invoices": "Factures",
+  "repairs": "Réparations",
+  "total_purchases": "Total achats",
+  "last_visit": "Dernière visite",
+  "client_since": "Client depuis",
+  "contact_whatsapp": "Contacter WhatsApp",
+  "view_invoices": "Voir factures",
+  "view_repairs": "Voir réparations"
+}

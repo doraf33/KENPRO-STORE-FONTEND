@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import './i18n';   // Initialiser i18next avant le rendu
 import App from './App.jsx';
 
 // Enregistrement Service Worker (offline-first)

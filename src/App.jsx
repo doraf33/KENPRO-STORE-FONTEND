@@ -16,6 +16,8 @@ import BillingPanel        from './components/BillingPanel';
 import RevenuePanel        from './components/RevenuePanel';
 import SecurityPanel       from './components/SecurityPanel';
 import CompliancePanel, { MyDataPanel } from './components/CompliancePanel';
+import LanguageSwitcher from './components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 import { TenantProvider }  from './context/TenantContext';
 import './App.css';
 
@@ -2348,29 +2350,30 @@ function AdminReports() {
 // ============================================================
 // APP PRINCIPAL
 // ============================================================
+// labelKey = clé dans le namespace 'nav' → traduit dans la sidebar
 const ADMIN_TABS = [
-  { id: 'dashboard',        label: 'Tableau de bord',     icon: '📊' },
-  { id: 'products',         label: 'Produits',             icon: '📦' },
-  { id: 'clients',          label: 'Clients',              icon: '👥' },
-  { id: 'invoices',         label: 'Factures / Devis',     icon: '🧾' },
-  { id: 'repairs',          label: 'Réparations',          icon: '🔧' },
-  { id: 'suppliers',        label: 'Fournisseurs',         icon: '🚚' },
-  { id: 'journals',         label: 'Journaux',             icon: '📒' },
-  { id: 'modules',          label: 'Modules',              icon: '🔩' },
-  { id: 'admin_reports',    label: 'Rapports vendeurs',    icon: '📋' },
-  { id: 'shop_settings',    label: 'Paramètres boutique',  icon: '⚙️' },
-  { id: 'online_store',     label: 'Boutique en ligne',    icon: '🛒' },
-  { id: 'payment_settings', label: 'Paiements',            icon: '💳' },
-  { id: 'revenue',          label: 'Mes Revenus',          icon: '💰', highlight: true },
-  { id: 'billing',          label: 'Abonnement',           icon: '📋' },
-  { id: 'super_admin',      label: 'Super Admin',          icon: '🏢', superOnly: true },
-  { id: 'security',         label: 'Sécurité',             icon: '🔐', superOnly: true },
-  { id: 'compliance',       label: 'RGPD & 2FA',           icon: '🛡️' },
+  { id: 'dashboard',        labelKey: 'dashboard',       icon: '📊' },
+  { id: 'products',         labelKey: 'products',        icon: '📦' },
+  { id: 'clients',          labelKey: 'clients',         icon: '👥' },
+  { id: 'invoices',         labelKey: 'invoices',        icon: '🧾' },
+  { id: 'repairs',          labelKey: 'repairs',         icon: '🔧' },
+  { id: 'suppliers',        labelKey: 'suppliers',       icon: '🚚' },
+  { id: 'journals',         labelKey: 'journals',        icon: '📒' },
+  { id: 'modules',          labelKey: 'modules',         icon: '🔩' },
+  { id: 'admin_reports',    labelKey: 'vendor_reports',  icon: '📋' },
+  { id: 'shop_settings',    labelKey: 'shop_settings',   icon: '⚙️' },
+  { id: 'online_store',     labelKey: 'online_store',    icon: '🛒' },
+  { id: 'payment_settings', labelKey: 'payments',        icon: '💳' },
+  { id: 'revenue',          labelKey: 'revenue',         icon: '💰', highlight: true },
+  { id: 'billing',          labelKey: 'subscription',    icon: '📋' },
+  { id: 'super_admin',      labelKey: 'super_admin',     icon: '🏢', superOnly: true },
+  { id: 'security',         labelKey: 'security',        icon: '🔐', superOnly: true },
+  { id: 'compliance',       labelKey: 'compliance',      icon: '🛡️' },
 ];
 const VENDOR_TABS = [
-  { id: 'vendor_dashboard', label: 'Mon tableau de bord', icon: '🏠' },
-  { id: 'my_report',        label: 'Rapport journalier',  icon: '📝' },
-  { id: 'my_reports',       label: 'Mes rapports',         icon: '📋' },
+  { id: 'vendor_dashboard', labelKey: 'vendor_dashboard', icon: '🏠' },
+  { id: 'my_report',        labelKey: 'my_report',        icon: '📝' },
+  { id: 'my_reports',       labelKey: 'my_reports',       icon: '📋' },
 ];
 
 // Composant "Mes rapports" (liste des rapports du vendeur)
@@ -2418,6 +2421,7 @@ function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { show: showToast } = useToast();
   const { isDark, toggleTheme }   = useTheme();
+  const { t, i18n }               = useTranslation('nav');
 
   // Session persistée — force re-login si user sans is_super_admin (cache ancien)
   useEffect(() => {
@@ -2503,29 +2507,30 @@ function AppShell() {
           <ConnectionDot />
         </div>
         <nav>
-          {TABS.map(t => (
-            <button key={t.id}
-              className={`nav-btn ${tab === t.id ? 'active' : ''}${t.highlight ? ' nav-btn-highlight' : ''}`}
-              onClick={() => { setTab(t.id); setSidebarOpen(false); }}>
-              <span className="nav-icon">{t.icon}</span> {t.label}
+          {TABS.map(navTab => (
+            <button key={navTab.id}
+              className={`nav-btn ${tab === navTab.id ? 'active' : ''}${navTab.highlight ? ' nav-btn-highlight' : ''}`}
+              onClick={() => { setTab(navTab.id); setSidebarOpen(false); }}>
+              <span className="nav-icon">{navTab.icon}</span> {t(navTab.labelKey, { defaultValue: navTab.labelKey })}
             </button>
           ))}
         </nav>
         <div className="sidebar-footer">
           <div style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 12, color: '#7a8094' }}>Notifications</span>
+            <span style={{ fontSize: 12, color: '#7a8094' }}>{i18n.t('common:notifications')}</span>
             <NotificationBell userId={user.id} />
           </div>
-          <button className="theme-toggle" onClick={toggleTheme}
-            title={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}>
+          {/* Sélecteur de langue */}
+          <LanguageSwitcher />
+          <button className="theme-toggle" onClick={toggleTheme}>
             <span className="theme-toggle-track">
               <span className={`theme-toggle-thumb ${isDark ? 'dark' : 'light'}`} />
             </span>
             <span className="theme-toggle-label">
-              {isDark ? '☀️ Mode clair' : '🌙 Mode sombre'}
+              {isDark ? `☀️ ${i18n.t('common:dark_mode')}` : `🌙 ${i18n.t('common:light_mode')}`}
             </span>
           </button>
-          <button className="btn-logout" onClick={logout}>🚪 Deconnexion</button>
+          <button className="btn-logout" onClick={logout}>🚪 {i18n.t('common:logout')}</button>
         </div>
       </aside>
       {sidebarOpen && <div className="overlay" onClick={() => setSidebarOpen(false)} />}

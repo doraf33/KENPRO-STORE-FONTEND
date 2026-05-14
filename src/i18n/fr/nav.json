@@ -1,0 +1,22 @@
+{
+  "dashboard": "Tableau de bord",
+  "products": "Produits",
+  "clients": "Clients",
+  "invoices": "Factures / Devis",
+  "repairs": "Réparations",
+  "suppliers": "Fournisseurs",
+  "journals": "Journaux",
+  "modules": "Modules",
+  "vendor_reports": "Rapports vendeurs",
+  "shop_settings": "Paramètres boutique",
+  "online_store": "Boutique en ligne",
+  "payments": "Paiements",
+  "revenue": "Mes Revenus",
+  "subscription": "Abonnement",
+  "super_admin": "Super Admin",
+  "security": "Sécurité",
+  "compliance": "RGPD & 2FA",
+  "vendor_dashboard": "Mon tableau de bord",
+  "my_report": "Rapport journalier",
+  "my_reports": "Mes rapports"
+}

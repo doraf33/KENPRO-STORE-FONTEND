@@ -1,0 +1,22 @@
+{
+  "dashboard": "Dashboard",
+  "products": "Products",
+  "clients": "Clients",
+  "invoices": "Invoices / Quotes",
+  "repairs": "Repairs",
+  "suppliers": "Suppliers",
+  "journals": "Journals",
+  "modules": "Modules",
+  "vendor_reports": "Vendor reports",
+  "shop_settings": "Shop settings",
+  "online_store": "Online store",
+  "payments": "Payments",
+  "revenue": "My Revenue",
+  "subscription": "Subscription",
+  "super_admin": "Super Admin",
+  "security": "Security",
+  "compliance": "GDPR & 2FA",
+  "vendor_dashboard": "My Dashboard",
+  "my_report": "Daily report",
+  "my_reports": "My reports"
+}

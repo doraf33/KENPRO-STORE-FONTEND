@@ -1,0 +1,19 @@
+{
+  "title": "Clients",
+  "new_client": "New client",
+  "client_name": "Client name",
+  "phone2": "Phone 2",
+  "add_client": "Add client",
+  "edit_client": "Edit client",
+  "delete_confirm": "Delete this client?",
+  "search_placeholder": "Search a client...",
+  "no_clients": "No clients registered",
+  "invoices": "Invoices",
+  "repairs": "Repairs",
+  "total_purchases": "Total purchases",
+  "last_visit": "Last visit",
+  "client_since": "Client since",
+  "contact_whatsapp": "Contact WhatsApp",
+  "view_invoices": "View invoices",
+  "view_repairs": "View repairs"
+}
