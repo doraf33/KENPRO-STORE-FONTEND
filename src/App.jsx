@@ -6,6 +6,7 @@ import LabelPrinter        from './components/LabelPrinter';
 import TicketPrinter       from './components/TicketPrinter';
 import ShopSettings        from './components/ShopSettings';
 import RepairTicketPrinter from './components/RepairTicketPrinter';
+import RepairLabelPrinter  from './components/RepairLabelPrinter';
 import OnlineStore         from './components/OnlineStore';
 import ProductStorePanel   from './components/ProductStorePanel';
 import PaymentSettings     from './components/PaymentSettings';
@@ -1123,8 +1124,30 @@ function Repairs() {
   const [clients,       setClients]       = useState([]);
   const [form,          setForm]          = useState({ client_id: '', device_type: 'laptop', brand: '', model: '', serial_number: '', problem: '', estimated_cost: '', priority: 'normal' });
   const [loading,       setLoading]       = useState(true);
-  const [ticketRepair,  setTicketRepair]  = useState(null);  // pour RepairTicketPrinter
+  const [ticketRepair,   setTicketRepair]   = useState(null);  // pour RepairTicketPrinter
+  const [labelRepair,    setLabelRepair]    = useState(null);  // pour RepairLabelPrinter
+  const [scanRepairOpen, setScanRepairOpen] = useState(false); // scanner barcode → REP
   const { show: showToast } = useToast();
+
+  const handleRepairScan = async (code) => {
+    setScanRepairOpen(false);
+    // code peut être "REP-0001" ou juste "REP-0001" depuis JsBarcode
+    const ticket = code.trim().toUpperCase();
+    try {
+      const res = await repairsAPI.getAll({ search: ticket });
+      const found = (res.data.repairs || []).find(r =>
+        r.ticket === ticket || r.ticket === code
+      );
+      if (found) {
+        setLabelRepair(found);
+        showToast('Réparation trouvée', `${found.ticket} — ${found.client_name}`, 'success');
+      } else {
+        showToast('Introuvable', `Aucune réparation pour "${ticket}"`, 'error');
+      }
+    } catch {
+      showToast('Erreur', 'Impossible de récupérer la réparation', 'error');
+    }
+  };
 
   const STATUSES = ['recu', 'diagnostic', 'attente_piece', 'en_reparation', 'termine', 'livre'];
   const STATUS_LABELS = { recu: 'Recu', diagnostic: 'Diagnostic', attente_piece: 'Att. piece', en_reparation: 'En repar.', termine: 'Termine', livre: 'Livre' };
@@ -1156,9 +1179,16 @@ function Repairs() {
       setForm({ client_id: '', device_type: 'laptop', brand: '', model: '', serial_number: '', problem: '', estimated_cost: '', priority: 'normal' });
       setShowForm(false);
       await load();
+      const newRepair = res.data.repair;
       // Ouvrir le ticket de réception automatiquement après création
-      setTicketRepair(res.data.repair);
-      showToast('Ticket créé', res.data.repair.ticket + ' — Imprimez le ticket de réception', 'success');
+      setTicketRepair(newRepair);
+      showToast('Ticket créé', newRepair.ticket + ' — Imprimez le ticket + l\'étiquette', 'success');
+      // Proposer d'imprimer l'étiquette après 1.5s (laisse le temps de fermer le ticket)
+      setTimeout(() => {
+        if (window.confirm(`Imprimer l'étiquette autocollante pour cet appareil ?\n(${newRepair.brand} ${newRepair.model})`)) {
+          setLabelRepair(newRepair);
+        }
+      }, 1500);
     } catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
@@ -1193,8 +1223,28 @@ function Repairs() {
       {ticketRepair && (
         <RepairTicketPrinter repair={ticketRepair} onClose={() => setTicketRepair(null)} />
       )}
+      {labelRepair && (
+        <RepairLabelPrinter repair={labelRepair} onClose={() => setLabelRepair(null)} />
+      )}
 
-      <div className="page-header"><h2>🔧 Réparations ({repairs.length})</h2><button className="btn-primary" onClick={openForm}>+ Réparation</button></div>
+      <div className="page-header">
+        <h2>🔧 Réparations ({repairs.length})</h2>
+        <div style={{ display:'flex', gap:8 }}>
+          <button className="btn-secondary" style={{ fontSize:12 }}
+                  onClick={() => setScanRepairOpen(true)} title="Scanner une étiquette REP pour trouver la réparation">
+            📷 Scanner REP
+          </button>
+          <button className="btn-primary" onClick={openForm}>+ Réparation</button>
+        </div>
+      </div>
+
+      {scanRepairOpen && (
+        <BarcodeScanner
+          title="Scanner étiquette réparation"
+          onDetect={handleRepairScan}
+          onClose={() => setScanRepairOpen(false)}
+        />
+      )}
 
       <div className="filter-bar">
         <button className={`btn-filter ${filter === '' ? 'active' : ''}`} onClick={() => setFilter('')}>Tout</button>
@@ -1245,6 +1295,11 @@ function Repairs() {
           </div>
           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <button className="btn-small btn-secondary" onClick={() => setTicketRepair(r)} title="Ticket thermique 58mm">🎫 Ticket</button>
+            <button className="btn-small btn-secondary"
+                    style={{ background:'rgba(212,161,46,.1)', color:'#d4a12e', border:'1px solid rgba(212,161,46,.3)' }}
+                    onClick={() => setLabelRepair(r)} title="Étiquette autocollante pour l'appareil">
+              🏷️ Étiquette
+            </button>
             {r.client_phone && WA_MESSAGES[r.status] && (
               <button className="btn-small btn-secondary" style={{ background:'#1c3b2a', color:'#2dd4a0', border:'1px solid #2dd4a0' }}
                 onClick={() => { const phone=r.client_phone.replace(/\D/g,''); window.open(`https://wa.me/${phone}?text=${encodeURIComponent(WA_MESSAGES[r.status]?.(r)||'')}`, '_blank'); }}>

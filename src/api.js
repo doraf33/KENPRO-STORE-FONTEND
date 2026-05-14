@@ -208,10 +208,12 @@ export const settingsAPI = {
 // ── TICKETS & ÉTIQUETTES ──
 // Ces endpoints retournent du HTML → on les ouvre dans une popup
 export const ticketsAPI = {
-  invoiceUrl:     (id)               => `${API_URL}/tickets/invoice/${id}`,
-  labelUrl:       (pid, qty, format) => `${API_URL}/tickets/label/${pid}?qty=${qty}&format=${format || '58mm'}`,
-  repairUrl:      (id)               => `${API_URL}/tickets/repair/${id}`,
-  repairExitUrl:  (id)               => `${API_URL}/tickets/repair/${id}/exit`,
+  invoiceUrl:       (id)               => `${API_URL}/tickets/invoice/${id}`,
+  labelUrl:         (pid, qty, format) => `${API_URL}/tickets/label/${pid}?qty=${qty}&format=${format || '58mm'}`,
+  repairUrl:        (id)               => `${API_URL}/tickets/repair/${id}`,
+  repairExitUrl:    (id)               => `${API_URL}/tickets/repair/${id}/exit`,
+  repairLabelUrl:   (id, fmt, qty)     => `${API_URL}/tickets/repair-label/${id}?format=${fmt || 'medium'}&qty=${qty || 1}`,
+  trackingUrl:      (ticket)           => `${(API_URL || 'http://localhost:8000/api').replace('/api','')}/suivi/${ticket}`,
 };
 
 // ── STORE PUBLIC (admin) ──
