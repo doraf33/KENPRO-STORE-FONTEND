@@ -163,7 +163,9 @@ function PhotosTab({ product, onSave }) {
             transition:'all .2s', marginBottom:14,
           }}
         >
-          <input ref={fileRef} type="file" multiple accept="image/*" style={{ display:'none' }}
+          <input ref={fileRef} type="file" multiple
+                 accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
+                 style={{ display:'none' }}
                  onChange={e => doUpload(e.target.files)} />
           {uploading
             ? <div style={{ color:'#d4a12e', fontSize:14 }}>⏳ Upload en cours…</div>
@@ -173,7 +175,7 @@ function PhotosTab({ product, onSave }) {
                   Glissez des photos ici ou cliquez pour sélectionner
                 </div>
                 <div style={{ color:'#7a8094', fontSize:11 }}>
-                  Encore {5 - photos.length} photo(s) possible(s)
+                  JPG · PNG · WEBP · HEIC (iPhone) — max 10 MB · {5 - photos.length} restante(s)
                 </div>
               </>
           }
