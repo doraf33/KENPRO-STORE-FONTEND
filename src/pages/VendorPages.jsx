@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { vendorAPI, dashboardAPI } from '../api';
-import { useToast } from '../context/AppContext';
+import { useTheme, useToast } from '../context/AppContext';
 
 const fmt = (n) => Number(n || 0).toLocaleString('fr-FR') + ' FCFA';
 

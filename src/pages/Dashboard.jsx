@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { dashboardAPI } from '../api';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/AppContext';
 
 function useCountUp(target, duration = 900) {
   const [val, setVal] = useState(0);
