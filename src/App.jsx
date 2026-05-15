@@ -1329,6 +1329,7 @@ function Repairs() {
 // ============================================================
 function Suppliers() {
   const [suppliers, setSuppliers] = useState([]);
+  const { t } = useTranslation(['suppliers', 'common']);
   const [stats, setStats] = useState({});
   const [showForm, setShowForm] = useState(false);
   const [showCredit, setShowCredit] = useState(false);
@@ -1440,6 +1441,7 @@ function Suppliers() {
 // ============================================================
 function Journals() {
   const [invoices, setInvoices] = useState([]);
+  const { t } = useTranslation(['common']);
   const [credits, setCredits] = useState([]);
   const [tab, setTab] = useState('sales');
   const [loading, setLoading] = useState(true);
@@ -1736,6 +1738,7 @@ function ModulePermCheckbox({ label, group, value, checked, onChange }) {
 }
 
 function ModuleForm({ module, onSave, onCancel }) {
+  const { t } = useTranslation(['modules', 'common']);
   const [form, setForm] = useState({
     name: module?.name || '', icon: module?.icon || '📦',
     color: module?.color || '#5b9cf6', description: module?.description || '',
@@ -2184,6 +2187,7 @@ function VendorReportForm({ onSubmitted }) {
 // ============================================================
 function AdminReports() {
   const [summary, setSummary]   = useState(null);
+  const { t } = useTranslation(['common']);
   const [reports, setReports]   = useState([]);
   const [period, setPeriod]     = useState('month');
   const [selected, setSelected] = useState(null);
@@ -2387,6 +2391,7 @@ const VENDOR_TABS = [
 // Composant "Mes rapports" (liste des rapports du vendeur)
 function MyReports() {
   const [reports, setReports] = useState([]);
+  const { t } = useTranslation(['common']);
   const [loading, setLoading] = useState(true);
   const STATUS_COLOR = { soumis: '#5b9cf6', valide: '#2dd4a0', rejete: '#ef6461' };
 

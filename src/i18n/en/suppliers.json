@@ -1,0 +1,12 @@
+{
+  "title": "Suppliers",
+  "new_supplier": "New supplier",
+  "total_credits": "Total credits",
+  "reimbursed": "Reimbursed",
+  "remaining": "Remaining",
+  "add_credit": "+ Credit",
+  "add_payment": "+ Payment",
+  "supplier_name": "Name",
+  "credit_description": "Description",
+  "delete_confirm": "Delete this supplier?"
+}

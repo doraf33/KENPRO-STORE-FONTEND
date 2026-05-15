@@ -15,6 +15,7 @@ import frPayments   from './fr/payments.json';
 import frSuperAdmin from './fr/superadmin.json';
 import frModules    from './fr/modules.json';
 import frNav        from './fr/nav.json';
+import frSuppliers  from './fr/suppliers.json';
 
 // EN
 import enCommon     from './en/common.json';
@@ -29,6 +30,7 @@ import enPayments   from './en/payments.json';
 import enSuperAdmin from './en/superadmin.json';
 import enModules    from './en/modules.json';
 import enNav        from './en/nav.json';
+import enSuppliers  from './en/suppliers.json';
 
 i18n
   .use(LanguageDetector)
@@ -48,6 +50,7 @@ i18n
         superadmin: frSuperAdmin,
         modules:    frModules,
         nav:        frNav,
+        suppliers:  frSuppliers,
       },
       en: {
         common:     enCommon,
@@ -62,6 +65,7 @@ i18n
         superadmin: enSuperAdmin,
         modules:    enModules,
         nav:        enNav,
+        suppliers:  enSuppliers,
       },
     },
     defaultNS: 'common',

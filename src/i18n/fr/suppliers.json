@@ -1,0 +1,12 @@
+{
+  "title": "Fournisseurs",
+  "new_supplier": "Nouveau fournisseur",
+  "total_credits": "Total crédits",
+  "reimbursed": "Remboursé",
+  "remaining": "Reste à payer",
+  "add_credit": "+ Crédit",
+  "add_payment": "+ Paiement",
+  "supplier_name": "Nom",
+  "credit_description": "Description",
+  "delete_confirm": "Supprimer ce fournisseur ?"
+}
