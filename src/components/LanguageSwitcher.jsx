@@ -23,9 +23,9 @@ export default function LanguageSwitcher() {
       gap: 4, padding: '6px 12px',
     }}>
       {LANGS.map((lang, i) => (
-        <>
+        <span key={lang.code} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <button
-            key={lang.code}
+            key={`btn-${lang.code}`}
             onClick={() => change(lang.code)}
             title={lang.label}
             style={{
@@ -45,9 +45,9 @@ export default function LanguageSwitcher() {
             {lang.flag} {lang.label}
           </button>
           {i < LANGS.length - 1 && (
-            <span key={`sep-${i}`} style={{ color: 'var(--border)', fontSize: 12 }}>|</span>
+            <span style={{ color: 'var(--border)', fontSize: 12 }}>|</span>
           )}
-        </>
+        </span>
       ))}
     </div>
   );

@@ -33,6 +33,7 @@ import CompliancePanel    from './components/CompliancePanel';
 import SyncStatus, { ConnectionDot } from './components/SyncStatus';
 import LanguageSwitcher   from './components/LanguageSwitcher';
 import { authAPI, notificationsAPI } from './api';
+import { TenantProvider } from './context/TenantContext';
 import './App.css';
 
 // ── Login ──────────────────────────────────────────────────────
@@ -324,9 +325,11 @@ export default function App() {
 
   return (
     <ThemeContext.Provider value={{ isDark, toggleTheme }}>
-      <ToastProvider>
-        <AppShell />
-      </ToastProvider>
+      <TenantProvider>
+        <ToastProvider>
+          <AppShell />
+        </ToastProvider>
+      </TenantProvider>
     </ThemeContext.Provider>
   );
 }
