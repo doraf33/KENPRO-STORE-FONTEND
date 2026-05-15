@@ -476,6 +476,7 @@ function PlatformBilling({ dashboard, tenants }) {
 
 
 export default function SuperAdminPanel() {
+  const { t } = useTranslation(['superadmin', 'common']);
   const [tenants,      setTenants]     = useState([]);
   const [stats,        setStats]       = useState(null);
   const [dashboard,    setDashboard]   = useState(null);
