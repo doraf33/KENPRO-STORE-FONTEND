@@ -174,13 +174,14 @@ function ToastProvider({ children }) {
 // LOGIN
 // ============================================================
 function Login({ onLogin }) {
+  const { t } = useTranslation(['auth', 'common']);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!username || !password) { setError('Remplissez tous les champs'); return; }
+    if (!username || !password) { setError(t('auth:fill_fields')); return; }
     setLoading(true); setError('');
     try {
       const res = await authAPI.login(username, password);
@@ -193,7 +194,7 @@ function Login({ onLogin }) {
       localStorage.setItem('kenpro_token', res.data.token);
       localStorage.setItem('kenpro_user', JSON.stringify(userToStore));
       onLogin(userToStore);
-    } catch (err) { setError(err.response?.data?.error || 'Erreur de connexion'); }
+    } catch (err) { setError(err.response?.data?.error || t('auth:login_error')); }
     setLoading(false);
   };
 
@@ -202,18 +203,18 @@ function Login({ onLogin }) {
       <div className="login-card">
         <img src="/logo.png" alt="KENPRO" className="login-logo-img" />
         <h1>KENPRO STORE</h1>
-        <p className="login-sub">Connectez-vous pour continuer</p>
+        <p className="login-sub">{t('auth:login_title')}</p>
         {error && <div className="error-msg">{error}</div>}
-        <input type="text" placeholder="Nom d'utilisateur" value={username}
+        <input type="text" {...{placeholder: t('auth:username')}} value={username}
           onChange={e => { setUsername(e.target.value); setError(''); }}
           onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-        <input type="password" placeholder="Mot de passe" value={password}
+        <input type="password" {...{placeholder: t('auth:password')}} value={password}
           onChange={e => { setPassword(e.target.value); setError(''); }}
           onKeyDown={e => e.key === 'Enter' && handleLogin()} />
         <button onClick={handleLogin} disabled={loading} className="btn-primary">
-          {loading ? 'Connexion...' : 'Se connecter'}
+          {loading ? t('auth:connecting') : t('auth:login_button')}
         </button>
-        <p className="login-hint">Admin par defaut : admin / admin</p>
+        <p className="login-hint">{t('auth:default_credentials')}</p>
       </div>
     </div>
   );
@@ -444,6 +445,7 @@ function AlertsPanel({ alerts }) {
 // DASHBOARD — Composant principal
 // ============================================================
 function Dashboard() {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [period, setPeriod] = useState('month');
   const [kpi, setKpi] = useState(null);
   const [chartData, setChartData] = useState([]);
@@ -508,7 +510,7 @@ function Dashboard() {
     URL.revokeObjectURL(url);
   };
 
-  if (loading) return <div className="loading">Chargement du tableau de bord...</div>;
+  if (loading) return <div className="loading">{t('common:loading')}</div>;
 
   const curr = kpi?.current || {};
   const comp = kpi?.comparison || {};
@@ -521,16 +523,16 @@ function Dashboard() {
       {/* En-tête */}
       <div className="dash-header">
         <div>
-          <h2 className="dash-title">📊 Tableau de bord analytique</h2>
+          <h2 className="dash-title">📊 {t('dashboard:title')}</h2>
           {lastUpdate && (
             <p className="dash-update">
-              Actualisé à {lastUpdate.toLocaleTimeString('fr-FR')} · Refresh auto 30s
+              {lastUpdate.toLocaleTimeString()} · {t('dashboard:refresh_auto')}
             </p>
           )}
         </div>
         <div className="dash-actions">
           <div className="period-tabs">
-            {[['day', "Auj."], ['week', 'Semaine'], ['month', 'Mois'], ['year', 'Année']].map(([k, l]) => (
+            {[['day', t('dashboard:today')], ['week', t('dashboard:week')], ['month', t('dashboard:month')], ['year', t('dashboard:year')]].map(([k, l]) => (
               <button key={k} className={`period-tab${period === k ? ' active' : ''}`} onClick={() => setPeriod(k)}>
                 {l}
               </button>
@@ -543,20 +545,20 @@ function Dashboard() {
       {/* Bannière critique */}
       {criticals > 0 && (
         <div className="alert-banner">
-          🚨 <strong>{criticals} alerte(s) critique(s)</strong> — consultez le panneau ci-dessous
+          🚨 <strong>{criticals} {t('dashboard:critical_alerts')}</strong> — consultez le panneau ci-dessous
         </div>
       )}
 
       {/* KPI */}
       <div className="kpi-grid">
-        <KPICard icon="💰" label="Chiffre d'affaires" value={curr.revenue || 0} unit="FCFA" trend={comp.revenue} color="gold" />
-        <KPICard icon="📈" label="Bénéfice brut" value={curr.gross_profit || 0} unit="FCFA" trend={comp.gross_profit} color="green" />
-        <KPICard icon="🧾" label="Factures payées" value={curr.nb_paid || 0} trend={comp.nb_paid} color="blue" />
-        <KPICard icon="⏳" label="En attente paiement" value={curr.nb_pending || 0} color="orange" />
-        <KPICard icon="🔄" label="Taux conversion" value={curr.conversion_rate || 0} unit="%" trend={comp.conversion_rate} color="purple" />
-        <KPICard icon="💎" label="Valeur stock" value={stock.value || 0} unit="FCFA" color="blue" />
-        <KPICard icon="📊" label="Taux de marge" value={curr.margin_rate || 0} unit="%" color={curr.margin_rate >= 0 ? 'green' : 'red'} />
-        <KPICard icon="🔧" label="Répar. actives" value={reps.active || 0} color="orange" />
+        <KPICard icon="💰" {...{label: t('dashboard:revenue')}} value={curr.revenue || 0} unit="FCFA" trend={comp.revenue} color="gold" />
+        <KPICard icon="📈" {...{label: t('dashboard:profit')}} value={curr.gross_profit || 0} unit="FCFA" trend={comp.gross_profit} color="green" />
+        <KPICard icon="🧾" {...{label: t('dashboard:paid_invoices')}} value={curr.nb_paid || 0} trend={comp.nb_paid} color="blue" />
+        <KPICard icon="⏳" {...{label: t('dashboard:pending_payment')}} value={curr.nb_pending || 0} color="orange" />
+        <KPICard icon="🔄" {...{label: t('dashboard:conversion_rate')}} value={curr.conversion_rate || 0} unit="%" trend={comp.conversion_rate} color="purple" />
+        <KPICard icon="💎" {...{label: t('dashboard:stock_value')}} value={stock.value || 0} unit="FCFA" color="blue" />
+        <KPICard icon="📊" {...{label: t('dashboard:margin_rate')}} value={curr.margin_rate || 0} unit="%" color={curr.margin_rate >= 0 ? 'green' : 'red'} />
+        <KPICard icon="🔧" {...{label: t('dashboard:active_repairs')}} value={reps.active || 0} color="orange" />
       </div>
 
       {/* Graphique principal */}
@@ -581,6 +583,7 @@ function Dashboard() {
 // PRODUITS
 // ============================================================
 function Products() {
+  const { t } = useTranslation(['products', 'common']);
   const [products, setProducts]     = useState([]);
   const [search, setSearch]         = useState('');
   const [showForm, setShowForm]     = useState(false);
@@ -620,7 +623,7 @@ function Products() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Supprimer ?')) return;
+    if (!confirm(t('products:delete_confirm'))) return;
     try { await productsAPI.delete(id); load(); } catch (err) { alert(err.response?.data?.detail || 'Erreur'); }
   };
 
@@ -641,21 +644,21 @@ function Products() {
     }
   };
 
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) return <div className="loading">{t('common:loading')}</div>;
 
   return (
     <div>
       {/* Modales */}
-      {showScanner  && <BarcodeScanner   onDetect={handleBarcodeDetected} onClose={() => setShowScanner(false)} title="Scanner un produit" />}
+      {showScanner  && <BarcodeScanner   onDetect={handleBarcodeDetected} onClose={() => setShowScanner(false)} title={t('products:scan')} />}
       {labelProduct && <LabelPrinter    product={labelProduct}  onClose={() => { setLabelProduct(null);  load(); }} />}
       {storeProduct && <ProductStorePanel product={storeProduct} onClose={() => { setStoreProduct(null); load(); }}
                           onSave={updated => setProducts(ps => ps.map(p => p.id === updated.id ? { ...p, ...updated } : p))} />}
 
       <div className="page-header">
-        <h2>📦 Produits ({products.length})</h2>
+        <h2>📦 {t('products:title')} ({products.length})</h2>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn-secondary" onClick={() => { setScanResult(null); setShowScanner(true); }}>📷 Scanner</button>
-          <button className="btn-primary" onClick={() => { resetForm(); setShowForm(!showForm); }}>+ Produit</button>
+          <button className="btn-secondary" onClick={() => { setScanResult(null); setShowScanner(true); }}>📷 {t('products:scan')}</button>
+          <button className="btn-primary" onClick={() => { resetForm(); setShowForm(!showForm); }}>+ {t('products:title')}</button>
         </div>
       </div>
 
@@ -733,7 +736,7 @@ function Products() {
 
       <div className="table-container">
         <table>
-          <thead><tr><th>Produit</th><th>Catégorie</th><th>Code-barres</th><th>Prix</th><th>Stock</th><th>Statut</th><th></th></tr></thead>
+          <thead><tr><th>{t('products:product_name')}</th><th>{t('common:category')}</th><th>{t('products:barcode')}</th><th>{t('common:price')}</th><th>{t('products:stock')}</th><th>{t('common:status')}</th><th></th></tr></thead>
           <tbody>{products.map(p => (
             <tr key={p.id}>
               <td className="bold">{p.name}</td>
@@ -766,6 +769,7 @@ function Products() {
 // CLIENTS
 // ============================================================
 function Clients() {
+  const { t } = useTranslation(['clients', 'common']);
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -801,7 +805,7 @@ function Clients() {
     try { await clientsAPI.delete(id); load(); } catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) return <div className="loading">{t('common:loading')}</div>;
 
   return (
     <div>
@@ -837,6 +841,7 @@ function Clients() {
 // FACTURES / DEVIS
 // ============================================================
 function Invoices() {
+  const { t } = useTranslation(['invoices', 'common']);
   const [invoices, setInvoices]     = useState([]);
   const [stats, setStats]           = useState({});
   const [filter, setFilter]         = useState('');
@@ -989,7 +994,7 @@ function Invoices() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) return <div className="loading">{t('common:loading')}</div>;
 
   return (
     <div>
@@ -998,7 +1003,7 @@ function Invoices() {
         <BarcodeScanner
           onDetect={handleInvoiceScan}
           onClose={() => { setShowScanner(false); setScanningItemIdx(null); }}
-          title="Scanner un produit"
+          title={t('products:scan')}
         />
       )}
       {ticketInvoice && (
@@ -1022,7 +1027,7 @@ function Invoices() {
       {showForm && (
         <div className="form-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ margin: 0 }}>Nouvelle facture / devis</h3>
+            <h3 style={{ margin: 0 }}>{t('invoices:new_invoice')} / {t('invoices:new_quote')}</h3>
             <button
               className="btn-secondary"
               style={{ fontSize: 13, padding: '7px 14px' }}
@@ -1033,7 +1038,7 @@ function Invoices() {
           </div>
           <div className="form-grid">
             <select value={form.invoice_type} onChange={e => setForm({ ...form, invoice_type: e.target.value })}>
-              <option value="facture">Facture</option><option value="devis">Devis</option>
+              <option value="facture">{t('invoices:facture')}</option><option value="devis">{t('invoices:devis')}</option>
             </select>
             <select value={form.client_id} onChange={e => setForm({ ...form, client_id: e.target.value })}>
               <option value="">— Choisir un client —</option>
@@ -1041,7 +1046,7 @@ function Invoices() {
             </select>
             {form.invoice_type === 'facture' && (
               <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
-                <option value="en_attente">En attente</option><option value="payee">Payée</option>
+                <option value="en_attente">{t('invoices:pending')}</option><option value="payee">{t('invoices:paid')}</option>
               </select>
             )}
           </div>
@@ -1120,6 +1125,7 @@ function Invoices() {
 // REPARATIONS
 // ============================================================
 function Repairs() {
+  const { t } = useTranslation(['repairs', 'common']);
   const [repairs,       setRepairs]       = useState([]);
   const [filter,        setFilter]        = useState('');
   const [showForm,      setShowForm]      = useState(false);
@@ -1218,7 +1224,7 @@ function Repairs() {
     } catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) return <div className="loading">{t('common:loading')}</div>;
 
   return (
     <div>
@@ -1270,8 +1276,8 @@ function Repairs() {
             <input placeholder="N° Serie" value={form.serial_number} onChange={e => setForm({ ...form, serial_number: e.target.value })} />
             <input type="number" placeholder="Estimation (FCFA)" value={form.estimated_cost} onChange={e => setForm({ ...form, estimated_cost: e.target.value })} />
             <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>
-              <option value="basse">Basse</option><option value="normal">Normale</option>
-              <option value="haute">Haute</option><option value="urgente">Urgente</option>
+              <option value="basse">{t('repairs:priority_low')}</option><option value="normal">{t('repairs:priority_normal')}</option>
+              <option value="haute">{t('repairs:priority_high')}</option><option value="urgente">{t('repairs:priority_urgent')}</option>
             </select>
           </div>
           <textarea placeholder="Probleme decrit par le client *" value={form.problem} onChange={e => setForm({ ...form, problem: e.target.value })}
@@ -1357,7 +1363,7 @@ function Suppliers() {
     catch (err) { alert(err?.response?.data?.detail || err?.response?.data?.error || 'Erreur'); }
   };
 
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) return <div className="loading">{t('common:loading')}</div>;
 
   return (
     <div>
@@ -1450,7 +1456,7 @@ function Journals() {
     load();
   }, []);
 
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) return <div className="loading">{t('common:loading')}</div>;
 
   const totalSales = invoices.reduce((s, i) => s + i.total, 0);
   const totalPurchases = credits.reduce((s, c) => s + c.amount, 0);
@@ -1756,7 +1762,7 @@ function ModuleForm({ module, onSave, onCancel }) {
         <input placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="form-input" />
       </div>
       <div style={{ marginTop: 16 }}>
-        <h4 style={{ fontSize: 13, marginBottom: 10, color: '#7a8094' }}>PERMISSIONS</h4>
+        <h4 style={{ fontSize: 13, marginBottom: 10, color: '#7a8094' }}>{t('modules:permissions')}</h4>
         {Object.entries(PERM_OPTIONS).map(([group, opts]) => (
           <div key={group} style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', color: '#5b9cf6' }}>{group.replace('_', ' ')}</div>
@@ -1806,6 +1812,7 @@ function AssignModuleModal({ module, users, onAssign, onClose }) {
 }
 
 function ModuleManager() {
+  const { t } = useTranslation(['modules', 'common']);
   const [modules, setModules]   = useState([]);
   const [users, setUsers]       = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -1849,7 +1856,7 @@ function ModuleManager() {
     try { await modulesAPI.unassign(mid, uid); load(); } catch {}
   };
 
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) return <div className="loading">{t('common:loading')}</div>;
 
   return (
     <div>
@@ -1925,6 +1932,7 @@ function ModuleManager() {
 // TABLEAU DE BORD VENDEUR
 // ============================================================
 function VendorDashboard() {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [data, setData]     = useState(null);
   const [myMod, setMyMod]   = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1941,7 +1949,7 @@ function VendorDashboard() {
 
   useEffect(() => { load(); const id = setInterval(load, 60000); return () => clearInterval(id); }, []);
 
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) return <div className="loading">{t('common:loading')}</div>;
   if (!data) return <div>Erreur de chargement.</div>;
 
   const pct     = data.today?.progress_pct || 0;
@@ -2219,7 +2227,7 @@ function AdminReports() {
   const axisColor = isDark ? '#7a8094' : '#94a3b8';
   const tipStyle  = { background: isDark ? '#1b1f30' : '#fff', border: `1px solid ${gridColor}`, borderRadius: 10, fontSize: 12 };
 
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) return <div className="loading">{t('common:loading')}</div>;
 
   return (
     <div>
@@ -2386,7 +2394,7 @@ function MyReports() {
     vendorAPI.getReports().then(r => { setReports(r.data.reports || []); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) return <div className="loading">{t('common:loading')}</div>;
   return (
     <div>
       <div className="page-header"><h2>📋 Mes rapports</h2></div>

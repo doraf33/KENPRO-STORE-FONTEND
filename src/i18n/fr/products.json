@@ -32,5 +32,15 @@
   "add_product": "Ajouter un produit",
   "edit_product": "Modifier le produit",
   "delete_confirm": "Supprimer ce produit ?",
-  "scan_barcode": "Scanner code-barres"
+  "scan_barcode": "Scanner code-barres",
+  "stock": "Stock",
+  "scan": "Scanner",
+  "stock_ok": "OK",
+  "stock_low": "Bas",
+  "stock_out": "Rupture",
+  "uploading": "Upload en cours...",
+  "specs": "Caractéristiques",
+  "unpublished": "Non publié",
+  "product": "Produit",
+  "price": "Prix"
 }

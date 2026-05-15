@@ -3,6 +3,7 @@
  * Affiche : score sécurité, features actives, audit logs, wallet plateforme.
  */
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 const apiFetch = (path, token) =>

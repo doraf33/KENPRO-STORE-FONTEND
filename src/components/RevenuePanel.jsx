@@ -4,6 +4,7 @@
  * transactions escrow, configuration compte de réception.
  */
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const API = (path, token) =>
   fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}${path}`, {

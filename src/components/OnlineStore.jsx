@@ -3,6 +3,7 @@
 // Deux onglets : Produits (publication) + Commandes
 // ============================================================
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { publicStoreAPI } from '../api';
 
 const fmt = n => Number(n || 0).toLocaleString('fr-FR') + ' FCFA';

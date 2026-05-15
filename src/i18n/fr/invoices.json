@@ -29,5 +29,8 @@
   "scan_product": "Scanner produit",
   "invoice_number": "N° Facture",
   "created_by": "Créé par",
-  "delete_confirm": "Supprimer cette facture ?"
+  "delete_confirm": "Supprimer cette facture ?",
+  "new": "Nouvelle facture",
+  "new_btn": "+ Facture",
+  "status": "Statut"
 }

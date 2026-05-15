@@ -87,5 +87,8 @@
   "from": "From",
   "to": "To",
   "per_page": "per page",
-  "page": "Page"
+  "page": "Page",
+  "confirm_delete": "Confirm deletion?",
+  "whatsapp": "WhatsApp",
+  "no_results": "No results"
 }

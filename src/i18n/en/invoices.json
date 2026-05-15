@@ -29,5 +29,8 @@
   "scan_product": "Scan product",
   "invoice_number": "Invoice #",
   "created_by": "Created by",
-  "delete_confirm": "Delete this invoice?"
+  "delete_confirm": "Delete this invoice?",
+  "new": "New invoice",
+  "new_btn": "+ Invoice",
+  "status": "Status"
 }

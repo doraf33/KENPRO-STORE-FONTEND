@@ -41,5 +41,10 @@
   "whatsapp_status": "WhatsApp notify",
   "next_status": "Next step",
   "all_statuses": "All statuses",
-  "delete_confirm": "Delete this repair?"
+  "delete_confirm": "Delete this repair?",
+  "new": "New repair",
+  "urgent": "URGENT",
+  "waiting_parts": "Waiting parts",
+  "completed": "Completed",
+  "scan_barcode": "Scan REP"
 }

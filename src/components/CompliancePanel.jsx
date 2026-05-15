@@ -3,6 +3,7 @@
  * Tabs : Consentements | Demandes RGPD | 2FA | Audit
  */
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const API = (path, token, method = 'GET', body = null) =>
   fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}${path}`, {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { subscriptionsAPI } from '../api';
 
 const fmt = n => Number(n || 0).toLocaleString('fr-FR');
@@ -78,6 +79,7 @@ function PlanCard({ plan, current, onSelect }) {
 }
 
 export default function BillingPanel() {
+  const { t } = useTranslation(['payments', 'common']);
   const [info, setInfo]       = useState(null);
   const [plans, setPlans]     = useState([]);
   const [payments, setPayments] = useState([]);
@@ -135,7 +137,7 @@ export default function BillingPanel() {
     }
   };
 
-  if (loading) return <div className="loading">Chargement abonnement…</div>;
+  if (loading) return <div className="loading">{t("common:loading")}</div>;
 
   const sub  = info?.subscription;
   const plan = info?.plan;

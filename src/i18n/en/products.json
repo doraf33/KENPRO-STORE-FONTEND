@@ -32,5 +32,15 @@
   "add_product": "Add product",
   "edit_product": "Edit product",
   "delete_confirm": "Delete this product?",
-  "scan_barcode": "Scan barcode"
+  "scan_barcode": "Scan barcode",
+  "stock": "Stock",
+  "scan": "Scan",
+  "stock_ok": "OK",
+  "stock_low": "Low",
+  "stock_out": "Out",
+  "uploading": "Uploading...",
+  "specs": "Specifications",
+  "unpublished": "Not published",
+  "product": "Product",
+  "price": "Price"
 }

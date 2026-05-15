@@ -41,5 +41,10 @@
   "whatsapp_status": "Notifier WhatsApp",
   "next_status": "Étape suivante",
   "all_statuses": "Tous statuts",
-  "delete_confirm": "Supprimer cette réparation ?"
+  "delete_confirm": "Supprimer cette réparation ?",
+  "new": "Nouvelle réparation",
+  "urgent": "URGENT",
+  "waiting_parts": "Att. pièces",
+  "completed": "Terminé",
+  "scan_barcode": "Scanner REP"
 }

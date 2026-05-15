@@ -3,6 +3,7 @@
 // Visible uniquement si is_super_admin = true
 // ============================================================
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { superAdminAPI } from '../api';
 
 const S = {
@@ -528,7 +529,7 @@ export default function SuperAdminPanel() {
     !search || t.name.toLowerCase().includes(search.toLowerCase()) || t.slug.includes(search)
   );
 
-  if (loading) return <div className="loading">Chargement Super Admin...</div>;
+  if (loading) return <div className="loading">{t("common:loading")}</div>;
 
   return (
     <div>
