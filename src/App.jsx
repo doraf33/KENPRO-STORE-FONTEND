@@ -29,7 +29,10 @@ import SuperAdminPanel    from './components/SuperAdminPanel';
 import BillingPanel       from './components/BillingPanel';
 import RevenuePanel       from './components/RevenuePanel';
 import SecurityPanel      from './components/SecurityPanel';
-import CompliancePanel    from './components/CompliancePanel';
+import CompliancePanel      from './components/CompliancePanel';
+import ReferralDashboard   from './components/ReferralDashboard';
+import PromoManager        from './components/PromoManager';
+import AnalyticsDashboard  from './components/AnalyticsDashboard';
 import SyncStatus, { ConnectionDot } from './components/SyncStatus';
 import LanguageSwitcher   from './components/LanguageSwitcher';
 import { authAPI, notificationsAPI } from './api';
@@ -175,6 +178,9 @@ const ADMIN_TABS = [
   { id: 'super_admin',      labelKey: 'super_admin',     icon: '🏢', superOnly: true },
   { id: 'security',         labelKey: 'security',        icon: '🔐', superOnly: true },
   { id: 'compliance',       labelKey: 'compliance',      icon: '🛡️' },
+  { id: 'referral',         labelKey: 'referral',        icon: '🎁', highlight: true },
+  { id: 'promos',           labelKey: 'promos',          icon: '🏷️' },
+  { id: 'analytics_mkt',   labelKey: 'analytics_mkt',   icon: '📊' },
 ];
 const VENDOR_TABS = [
   { id: 'vendor_dashboard', labelKey: 'vendor_dashboard', icon: '🏠' },
@@ -244,6 +250,9 @@ function AppShell() {
       case 'super_admin':      return <SuperAdminPanel />;
       case 'security':         return <SecurityPanel token={token} />;
       case 'compliance':       return <CompliancePanel isSuperAdmin={isSuperAdmin} />;
+      case 'referral':         return <ReferralDashboard />;
+      case 'promos':           return <PromoManager />;
+      case 'analytics_mkt':   return <AnalyticsDashboard />;
       case 'vendor_dashboard': return <VendorDashboard />;
       case 'my_report':        return <VendorReportForm onSubmitted={() => {
         setTab('my_reports');

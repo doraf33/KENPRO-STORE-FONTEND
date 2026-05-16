@@ -18,5 +18,8 @@
   "compliance": "RGPD & 2FA",
   "vendor_dashboard": "Mon tableau de bord",
   "my_report": "Rapport journalier",
-  "my_reports": "Mes rapports"
+  "my_reports": "Mes rapports",
+  "referral": "Parrainage",
+  "promos": "Promotions",
+  "analytics_mkt": "Analytics"
 }

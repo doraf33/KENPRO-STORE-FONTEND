@@ -18,5 +18,8 @@
   "compliance": "GDPR & 2FA",
   "vendor_dashboard": "My Dashboard",
   "my_report": "Daily report",
-  "my_reports": "My reports"
+  "my_reports": "My reports",
+  "referral": "Referral",
+  "promos": "Promotions",
+  "analytics_mkt": "Analytics"
 }
