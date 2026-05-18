@@ -295,11 +295,25 @@ function TabInvoices({ supplierId }) {
 // ═══════════════════════════════════════════════════════════════
 // ONGLET PAIEMENTS
 // ═══════════════════════════════════════════════════════════════
+// Providers mobiles disponibles (enrichis avec 3 nouveaux)
+const MOBILE_PROVIDERS = [
+  { val: 'mtn_momo',    label: '📱 MTN Mobile Money',  countries: ['CM','CI','GH'] },
+  { val: 'orange_money',label: '🟠 Orange Money',       countries: ['CM','SN','CI','ML','BF','NE'] },
+  { val: 'campay',      label: '🔵 CamPay',             countries: ['CM'] },
+  { val: 'paiementpro', label: '💳 Paiement Pro',       countries: ['CI','SN','BF','ML','BJ','TG'] },
+  { val: 'cinetpay',    label: '🟢 CinetPay',           countries: ['CI','SN','CM','BF','ML','BJ','TG','GN','CG','CD'] },
+  { val: 'wave',        label: '🌊 Wave',                countries: ['SN','CI'] },
+];
+
 function TabPayments({ supplierId }) {
   const [payments,  setPayments]  = useState([]);
   const [invoices,  setInvoices]  = useState([]);
   const [loading,   setLoading]   = useState(true);
-  const [form, setForm] = useState({ invoice_id: '', amount: '', payment_method: 'cash', reference: '', notes: '' });
+  const [form, setForm] = useState({
+    invoice_id: '', amount: '', payment_method: 'cash',
+    reference: '', notes: '', mobile_phone: '',
+  });
+  const [mobileStatus, setMobileStatus] = useState(null); // null | 'pending' | 'success' | 'error'
   const [msg, setMsg]  = useState('');
 
   const load = () => {
@@ -317,8 +331,58 @@ function TabPayments({ supplierId }) {
 
   useEffect(() => { load(); }, [supplierId]);
 
+  const isMobile = MOBILE_PROVIDERS.some(p => p.val === form.payment_method);
+
   const save = async () => {
     if (!form.amount) return;
+
+    // Si paiement mobile → initier via API paiement
+    if (isMobile && form.mobile_phone) {
+      setMobileStatus('pending');
+      setMsg('📱 Paiement mobile en cours…');
+      try {
+        const ref = `SUPP-${supplierId}-${Date.now()}`;
+        const res = await api('/payments/initiate', 'POST', {
+          provider: form.payment_method,
+          phone: form.mobile_phone,
+          amount: parseFloat(form.amount),
+          currency: 'XAF',
+          reference: ref,
+          description: `Paiement fournisseur #${supplierId}`,
+        });
+
+        if (res.status === 'PENDING' || res.status === 'SUCCESSFUL') {
+          // Enregistrer le paiement dans le crédit fournisseur
+          await api(`/suppliers/${supplierId}/payments`, 'POST', {
+            amount: parseFloat(form.amount),
+            invoice_id: form.invoice_id ? parseInt(form.invoice_id) : null,
+            payment_method: form.payment_method,
+            reference: res.transaction_id || ref,
+            notes: `Paiement mobile initié — ${form.payment_method}`,
+          });
+
+          // Message auto dans le chat
+          await api(`/suppliers/${supplierId}/messages`, 'POST', {
+            message: `💳 Paiement de ${parseInt(form.amount).toLocaleString('fr-FR')} FCFA initié via ${form.payment_method.replace('_',' ').toUpperCase()} ✅ Réf: ${res.transaction_id || ref}`,
+            sender_name: 'Système',
+          });
+
+          setMobileStatus('success');
+          setMsg('✅ Paiement mobile initié ! Vérifiez votre téléphone.');
+          setForm({ invoice_id:'', amount:'', payment_method:'cash', reference:'', notes:'', mobile_phone:'' });
+          load();
+        } else {
+          setMobileStatus('error');
+          setMsg(`❌ Paiement échoué: ${res.message || 'Erreur provider'}`);
+        }
+      } catch (e) {
+        setMobileStatus('error');
+        setMsg('❌ Erreur réseau');
+      }
+      return;
+    }
+
+    // Paiement classique (espèces, virement)
     try {
       await api(`/suppliers/${supplierId}/payments`, 'POST', {
         amount: parseFloat(form.amount),
@@ -328,12 +392,20 @@ function TabPayments({ supplierId }) {
         notes: form.notes,
       });
       setMsg('✅ Paiement enregistré !');
-      setForm({ invoice_id:'', amount:'', payment_method:'cash', reference:'', notes:'' });
+      setForm({ invoice_id:'', amount:'', payment_method:'cash', reference:'', notes:'', mobile_phone:'' });
       load();
     } catch { setMsg('❌ Erreur'); }
   };
 
-  const METHODS = [['cash','💵 Espèces'],['mtn_momo','📱 MTN MoMo'],['orange_money','🍊 Orange Money'],['transfer','🏦 Virement']];
+  const METHODS = [
+    ['cash',     '💵 Espèces'],
+    ['mtn_momo', '📱 MTN MoMo'],
+    ['orange_money', '🍊 Orange Money'],
+    ['campay',   '🔵 CamPay'],
+    ['paiementpro', '💳 Paiement Pro'],
+    ['cinetpay', '🟢 CinetPay'],
+    ['transfer', '🏦 Virement'],
+  ];
 
   return (
     <div>
@@ -365,13 +437,35 @@ function TabPayments({ supplierId }) {
             </label>
           ))}
         </div>
+        {/* Numéro mobile si provider mobile */}
+        {isMobile && (
+          <div style={{ marginBottom: 10 }}>
+            <input className="form-input" placeholder="📱 Numéro Mobile Money (+237 6XX XXX XXX)"
+                   value={form.mobile_phone}
+                   onChange={e => setForm(f => ({ ...f, mobile_phone: e.target.value }))}
+                   style={{ width: '100%' }} />
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+              ℹ️ Le fournisseur recevra une notification pour confirmer le paiement
+            </div>
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
           <input className="form-input" placeholder="Référence (numéro transaction)" value={form.reference}
                  onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} />
           <input className="form-input" placeholder="Notes" value={form.notes}
                  onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
         </div>
-        <button className="btn btn-primary btn-sm" onClick={save}>💳 Enregistrer le paiement</button>
+        {mobileStatus === 'pending' && (
+          <div style={{ padding: '8px 12px', background: 'rgba(91,156,246,.1)', borderRadius: 8,
+                        fontSize: 12, color: '#5b9cf6', marginBottom: 10 }}>
+            ⏳ Paiement en attente de confirmation…
+          </div>
+        )}
+        <button className="btn btn-primary btn-sm" onClick={save}
+                disabled={mobileStatus === 'pending'}
+                style={{ opacity: mobileStatus === 'pending' ? 0.6 : 1 }}>
+          {isMobile ? '📱 Initier le paiement mobile' : '💳 Enregistrer le paiement'}
+        </button>
       </div>
 
       {/* Timeline paiements */}
