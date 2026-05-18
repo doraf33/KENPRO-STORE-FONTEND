@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { suppliersAPI, creditsAPI, creditPaymentsAPI } from '../api';
 import { useToast } from '../context/AppContext';
+import SupplierCreditPanel from '../components/SupplierCreditPanel';
 
 const fmt = (n) => Number(n || 0).toLocaleString('fr-FR') + ' FCFA';
 
@@ -12,6 +13,7 @@ function Suppliers() {
   const [showForm, setShowForm] = useState(false);
   const [showCredit, setShowCredit] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState(null); // pour le panneau crédit
   const [form, setForm] = useState({ name: '', phone: '', email: '', city: '' });
   const [creditForm, setCreditForm] = useState({ supplier_id: '', description: '', amount: '' });
   const [paymentForm, setPaymentForm] = useState({ supplier_id: '', amount: '', description: '' });
@@ -101,12 +103,37 @@ function Suppliers() {
         </div>
       )}
 
+      {/* Panneau crédit fournisseur */}
+      {selectedSupplier && (
+        <SupplierCreditPanel
+          supplier={selectedSupplier}
+          onClose={() => setSelectedSupplier(null)}
+          userName="Admin"
+        />
+      )}
+
       <div className="cards-list">{suppliers.map(s => (
-        <div key={s.id} className="list-card">
-          <div><div className="bold">{s.name}</div><div className="muted small">📱 {s.phone || '—'}</div></div>
+        <div key={s.id} className="list-card" style={{ cursor: 'default' }}>
+          <div>
+            <div className="bold">{s.name}</div>
+            <div className="muted small">📱 {s.phone || '—'}</div>
+          </div>
           <div className="text-right">
             <div className="muted small">Solde</div>
-            <div className={`bold ${s.balance > 0 ? 'orange' : 'green'}`}>{s.balance > 0 ? fmt(s.balance) : 'Solde ✓'}</div>
+            <div className={`bold ${s.balance > 0 ? 'orange' : 'green'}`}>
+              {s.balance > 0 ? fmt(s.balance) : 'Solde ✓'}
+            </div>
+            <button
+              onClick={() => setSelectedSupplier(s)}
+              style={{
+                marginTop: 6, fontSize: 11, padding: '3px 10px',
+                background: 'rgba(212,161,46,.15)', color: '#d4a12e',
+                border: '1px solid rgba(212,161,46,.3)', borderRadius: 6,
+                cursor: 'pointer', fontWeight: 700,
+              }}
+            >
+              💳 Crédit & Factures
+            </button>
           </div>
         </div>
       ))}</div>
