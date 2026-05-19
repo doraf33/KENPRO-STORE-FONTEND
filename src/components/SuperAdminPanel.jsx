@@ -475,6 +475,93 @@ function PlatformBilling({ dashboard, tenants }) {
 }
 
 
+function ResetDataModal({ onClose }) {
+  const [code,      setCode]     = useState('');
+  const [loading,   setLoading]  = useState(false);
+  const [result,    setResult]   = useState(null);
+  const [error,     setError]    = useState('');
+  const confirmed = code === 'RESET-KENPRO';
+
+  const handleReset = async () => {
+    if (!confirmed) return;
+    setLoading(true);
+    setError('');
+    try {
+      const r = await superAdminAPI.resetData(code);
+      setResult(r.data);
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Erreur lors du reset');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position:'fixed', inset:0, background:'rgba(0,0,0,.7)',
+      display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999,
+    }}>
+      <div style={{ background:'#141827', border:'1px solid #ef646160', borderRadius:12, padding:28, width:420, maxWidth:'95vw' }}>
+        {result ? (
+          <>
+            <div style={{ textAlign:'center', marginBottom:20 }}>
+              <div style={{ fontSize:36 }}>✅</div>
+              <div style={{ color:'#2dd4a0', fontWeight:700, fontSize:16, marginTop:8 }}>
+                {result.message}
+              </div>
+              <div style={{ color:'#7a8094', fontSize:13, marginTop:6 }}>
+                {result.tables_cleared} tables vidées · {result.rows_deleted?.toLocaleString('fr-FR')} lignes supprimées
+              </div>
+            </div>
+            <button onClick={onClose} style={{ ...S.btnSec, width:'100%' }}>Fermer</button>
+          </>
+        ) : (
+          <>
+            <div style={{ textAlign:'center', marginBottom:16 }}>
+              <div style={{ fontSize:32 }}>⚠️</div>
+              <div style={{ color:'#ef6461', fontWeight:700, fontSize:16, marginTop:8 }}>ATTENTION</div>
+            </div>
+            <p style={{ color:'#eaedf3', fontSize:13, lineHeight:1.6, marginBottom:16 }}>
+              Vous allez supprimer <strong>TOUTES les données</strong> de la plateforme
+              (clients, produits, factures, réparations, paiements…).
+              <br /><br />
+              Les <strong>utilisateurs</strong> et les <strong>paramètres</strong> sont conservés.
+            </p>
+            <label style={{ display:'block', color:'#7a8094', fontSize:12, marginBottom:6 }}>
+              Tapez <strong style={{ color:'#ef6461' }}>RESET-KENPRO</strong> pour confirmer
+            </label>
+            <input
+              value={code}
+              onChange={e => setCode(e.target.value)}
+              placeholder="RESET-KENPRO"
+              style={{ ...S.input, marginBottom:16, borderColor: confirmed ? '#ef6461' : '#252a3a' }}
+            />
+            {error && (
+              <div style={{ color:'#ef6461', fontSize:12, marginBottom:12 }}>{error}</div>
+            )}
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={onClose} style={{ ...S.btnSec, flex:1 }}>Annuler</button>
+              <button
+                onClick={handleReset}
+                disabled={!confirmed || loading}
+                style={{
+                  flex:1, background: confirmed ? '#ef6461' : '#2a1e1e',
+                  color: confirmed ? '#fff' : '#7a8094',
+                  border:'none', borderRadius:8, padding:'8px 16px',
+                  cursor: confirmed ? 'pointer' : 'not-allowed', fontWeight:700, fontSize:13,
+                }}
+              >
+                {loading ? '...' : 'Confirmer Reset'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 export default function SuperAdminPanel() {
   const { t } = useTranslation(['superadmin', 'common']);
   const [tenants,      setTenants]     = useState([]);
@@ -483,8 +570,9 @@ export default function SuperAdminPanel() {
   const [loading,      setLoading]     = useState(true);
   const [showCreate,   setShowCreate]  = useState(false);
   const [search,       setSearch]      = useState('');
-  const [activeTab,    setActiveTab]   = useState('dashboard'); // 'dashboard' | 'boutiques'
+  const [activeTab,    setActiveTab]   = useState('dashboard');
   const [impersonating, setImpersonating] = useState(null);
+  const [showReset,    setShowReset]   = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -544,7 +632,7 @@ export default function SuperAdminPanel() {
         </div>
       </div>
 
-      {/* Onglets Dashboard / Boutiques / Billing */}
+      {/* Onglets Dashboard / Boutiques / Billing / Maintenance */}
       <div className="filter-bar" style={{ marginBottom:16 }}>
         <button className={`btn-filter ${activeTab==='dashboard'?'active':''}`} onClick={() => setActiveTab('dashboard')}>
           📊 Dashboard plateforme
@@ -557,6 +645,11 @@ export default function SuperAdminPanel() {
                 style={activeTab==='billing' ? {} : { color:'#d4a12e', borderColor:'rgba(212,161,46,.3)' }}>
           💰 Billing
         </button>
+        <button className={`btn-filter ${activeTab==='maintenance'?'active':''}`}
+                onClick={() => setActiveTab('maintenance')}
+                style={activeTab==='maintenance' ? { color:'#ef6461', borderColor:'#ef6461' } : { color:'#ef6461', borderColor:'rgba(239,100,97,.3)' }}>
+          🔧 Maintenance
+        </button>
       </div>
 
       {activeTab === 'dashboard' && <PlatformDashboard dashboard={dashboard} />}
@@ -564,6 +657,26 @@ export default function SuperAdminPanel() {
       {activeTab === 'boutiques' && <GlobalStats stats={stats} />}
 
       {activeTab === 'billing' && <PlatformBilling dashboard={dashboard} tenants={tenants} />}
+
+      {activeTab === 'maintenance' && (
+        <div style={S.card}>
+          <h3 style={{ color:'#eaedf3', marginTop:0, marginBottom:16 }}>🔧 Maintenance</h3>
+          <div style={{ border:'1px solid #ef646140', borderRadius:10, padding:20, maxWidth:480 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
+              <button
+                onClick={() => setShowReset(true)}
+                style={{ background:'transparent', color:'#ef6461', border:'1px solid #ef6461', borderRadius:8, padding:'10px 20px', cursor:'pointer', fontWeight:700, fontSize:13 }}
+              >
+                Réinitialiser les données
+              </button>
+            </div>
+            <p style={{ color:'#7a8094', fontSize:12, lineHeight:1.6, margin:0 }}>
+              Cette action supprime toutes les données (clients, produits, factures, réparations, paiements…).
+              Les utilisateurs et les paramètres sont conservés.
+            </p>
+          </div>
+        </div>
+      )}
 
       {showCreate && (
         <CreateTenantForm
@@ -628,6 +741,8 @@ export default function SuperAdminPanel() {
       </div>
         </>
       )}
+
+      {showReset && <ResetDataModal onClose={() => setShowReset(false)} />}
     </div>
   );
 }

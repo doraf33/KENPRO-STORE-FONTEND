@@ -245,6 +245,7 @@ export const superAdminAPI = {
   getTopTenants:        (n)   => api.get('/super-admin/dashboard/top-tenants', { params: { limit: n || 10 } }),
   getDashboardPlans:    ()    => api.get('/super-admin/dashboard/plans'),
   getDashboardAlerts:   ()    => api.get('/super-admin/dashboard/alerts'),
+  resetData:            (code) => api.post('/super-admin/reset-data', { confirmation: code }),
 };
 
 // ── MA BOUTIQUE ──
